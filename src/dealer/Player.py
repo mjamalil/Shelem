@@ -69,7 +69,14 @@ class Player(object):
         :return: pops and plays the best available card in the current hand  
         """
         # TODO: NotImplemented
-        return self.deck.cards.popleft()
+
+        if current_hand:
+            suit = current_hand[0].suit
+        elif not hands_played and not current_hand:
+            suit = self.hokm_suit
+        else:
+            suit = SUITS.NEITHER
+        return self.deck.pop_random_from_suit(suit)
 
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
         """
@@ -95,14 +102,4 @@ class Player(object):
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 
         """
-        # TODO: NotImplemented
-        suit_select = random.randint(1, 4)
-        if suit_select == 1:
-            hokm_suit = SUITS.SPADES
-        elif suit_select == 2:
-            hokm_suit = SUITS.HEARTS
-        elif suit_select == 3:
-            hokm_suit = SUITS.DIAMONDS
-        else:
-            hokm_suit = SUITS.CLUBS
-        return random.sample(range(16), 4), self.game_mode, hokm_suit
+        return random.sample(range(16), 4), self.game_mode, self.deck.cards[0].suit

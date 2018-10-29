@@ -1,9 +1,8 @@
-from typing import Deque, Tuple, Any
+from typing import List, Tuple, Any
 
 from dealer import Utils
 from dealer.Utils import GAMEMODE, SUITS, VALUES
 from dealer.Card import Card
-from collections import deque
 import random
 
 
@@ -13,10 +12,10 @@ def split(a, n):
 
 
 class Deck(object):
-    def __init__(self, cards: Deque[Card]=None, deck_id: int=0):
+    def __init__(self, cards: List[Card]=None, deck_id: int=0):
         if cards is None:
             cards = []
-        self._cards = deque(sorted(cards))
+        self._cards = list(sorted(cards))
         self.deck_id = deck_id
 
     def deal(self) -> Tuple[Any, Any, Any, Any, Any]:
@@ -37,10 +36,10 @@ class Deck(object):
             splitted = [x for x in split(cards, random.randint(2, 5))]
             random.shuffle(splitted)
             cards = [y for x in splitted for y in x]
-        self._cards = deque(cards)
+        self._cards = list(cards)
 
     @property
-    def cards(self) -> Deque:
+    def cards(self) -> List:
         return self._cards
 
     @property
@@ -57,8 +56,19 @@ class Deck(object):
                 score += 5
         return score
 
+    def pop_random_from_suit(self, suit: SUITS):
+        # TODO optimize it with memoization
+        if suit is SUITS.NEITHER:
+            return self._cards.pop(0)
+        pop_index = 0
+        for ind, card in enumerate(self._cards):
+            if card.suit == suit:
+                pop_index = ind
+                break
+        return self._cards.pop(pop_index)
+
     @staticmethod
-    def build_cards() -> Deque:
+    def build_cards() -> List:
         """
         Current build does not build Jokers!
         """
@@ -70,12 +80,12 @@ class Deck(object):
                 if val == VALUES.JOKER:
                     continue
                 built_cards.append(Card(val, suit))
-        return deque(sorted(built_cards))
+        return list(sorted(built_cards))
 
     def __add__(self, other):
         if isinstance(other, Deck):
             return Deck(cards=list(self._cards) + list(other._cards))
-        elif isinstance(other, deque):
+        elif isinstance(other, list):
             return Deck(cards=list(self._cards) + other)
         elif isinstance(other, Card):
             return Deck(cards=list(self._cards) + [other])
@@ -84,11 +94,11 @@ class Deck(object):
 
     def __iadd__(self, other):
         if isinstance(other, Deck):
-            self._cards = deque(sorted(list(self._cards) + list(other._cards)))
-        elif isinstance(other, deque) or isinstance(other, list):
-            self._cards = deque(sorted(list(self._cards) + other))
+            self._cards = sorted(list(self._cards) + list(other._cards))
+        elif isinstance(other, list):
+            self._cards = sorted(list(self._cards) + other)
         elif isinstance(other, Card):
-            self._cards = deque(sorted(list(self._cards) + [other]))
+            self._cards = sorted(list(self._cards) + [other])
         else:
             raise NotImplementedError
         return self
@@ -127,7 +137,7 @@ class Deck(object):
     def __ne__(self, other):
         if isinstance(other, Deck):
             ocards = other._cards
-        elif isinstance(other, deque):
+        elif isinstance(other, list):
             ocards = other
         else:
             return True
@@ -142,7 +152,7 @@ class Deck(object):
     def __eq__(self, other):
         if isinstance(other, Deck):
             ocards = other._cards
-        elif isinstance(other, deque):
+        elif isinstance(other, list):
             ocards = other
         else:
             return False

@@ -60,10 +60,15 @@ class Game(object):
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
         team1_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         team2_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
+        self.french_deck = self.players[0].saved_deck + self.players[2].saved_deck + \
+            self.players[1].saved_deck + self.players[3].saved_deck
         final_bet = last_bets[-1]
         team1_has_bet = final_bet.id == 0 or final_bet.id == 2
         if (team1_has_bet and team1_score >= final_bet.bet) or (not team1_has_bet and team2_score >= final_bet.bet):
-            return team1_score, team2_score
+            if team1_has_bet:
+                return final_bet.bet, team2_score
+            else:
+                return team1_score, final_bet.bet
         elif (team1_has_bet and team2_score < 85) or (not team1_has_bet and team1_score < 85):
             if team1_has_bet:
                 return -final_bet.bet, team2_score

@@ -57,20 +57,20 @@ class RankedValue(object):
 
 
 class VALUES(Enum):
-    ACE =   RankedValue("Ace",   13, 1, 13)
-    KING =  RankedValue("King",  12, 2, 1)
-    QUEEN = RankedValue("Queen", 11, 3, 2)
-    JACK =  RankedValue("Jack",  10, 4, 5)
+    ACE =   RankedValue("A ",   13, 1, 13)
+    KING =  RankedValue("K ",  12, 2, 1)
+    QUEEN = RankedValue("Q ", 11, 3, 2)
+    JACK =  RankedValue("J ",  10, 4, 5)
     TEN =   RankedValue("10",    9,  5, 3)
-    NINE =  RankedValue("9",     8,  6, 4)
-    EIGHT = RankedValue("8",     7,  7, 5)
-    SEVEN = RankedValue("7",     6,  8, 6)
-    SIX =   RankedValue("6",     5,  9, 7)
-    FIVE =  RankedValue("5",     4, 10, 8)
-    FOUR =  RankedValue("4",     3, 11, 9)
-    THREE = RankedValue("3",     2, 12, 10)
-    TWO =   RankedValue("2",     1, 13, 11)
-    JOKER = RankedValue("Joker", 0,  0, 12)
+    NINE =  RankedValue("9 ",     8,  6, 4)
+    EIGHT = RankedValue("8 ",     7,  7, 5)
+    SEVEN = RankedValue("7 ",     6,  8, 6)
+    SIX =   RankedValue("6 ",     5,  9, 7)
+    FIVE =  RankedValue("5 ",     4, 10, 8)
+    FOUR =  RankedValue("4 ",     3, 11, 9)
+    THREE = RankedValue("3 ",     2, 12, 10)
+    TWO =   RankedValue("2 ",     1, 13, 11)
+    JOKER = RankedValue("Jokers", 0,  0, 12)
 
 NORMAL_RANKS = {
     "Ace": 13,

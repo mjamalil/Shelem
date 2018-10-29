@@ -1,20 +1,24 @@
 from typing import Tuple
 
-from dealer.Deck import Deck
-from dealer.Player import Player, Bet
+from dealer.Logging import Logging
+from dealer.Deck import Deck, Hand
+from dealer.Player import Player
 from collections import deque
 
 
 class Game(object):
-    def __init__(self):
+    def __init__(self, verbose: bool = False):
         self.french_deck = Deck()
         self.players = [Player(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]
         self.player_id_receiving_first_hand = 0
         self.team_1_score = 0
         self.team_2_score = 0
+        self.verbose = verbose
+        self.logging = Logging()
 
     def play_a_round(self) -> Tuple[int, int]:
         d1, d2, d3, middle_deck, d4 = self.french_deck.deal()
+        self.logging.log_middle_deck(middle_deck)
         decks = deque([d1, d2, d3, d4])
         for _ in range(self.player_id_receiving_first_hand):
             decks.append(decks.popleft())
@@ -39,11 +43,15 @@ class Game(object):
                 betting_rounds += 1
         hakem = betting_players.popleft()
         last_winner_id = hakem.player_id
+        self.logging.log_bet(last_bets[-1])
         game_mode, hokm_suit = hakem.make_hakem(middle_deck)
+        self.logging.log_hakem_saved_hand(Deck(hakem.saved_deck))
+        self.logging.log_hokm(game_mode, hokm_suit)
         for i in range(4):
             self.players[i].set_hokm_and_game_mode(game_mode, hokm_suit)
         hands_played = []
         for i in range(12):
+            first_player = last_winner_id
             next_player_id = last_winner_id
             current_hand = []
             winner_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
@@ -56,6 +64,7 @@ class Game(object):
                     last_winner_id = next_player_id
                     winner_card = played_card
             hands_played.append(current_hand)
+            self.logging.add_hand(first_player, current_hand)
             self.players[last_winner_id].store_hand(current_hand)
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
         team1_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
@@ -64,6 +73,8 @@ class Game(object):
             self.players[1].saved_deck + self.players[3].saved_deck
         final_bet = last_bets[-1]
         team1_has_bet = final_bet.id == 0 or final_bet.id == 2
+        if self.verbose:
+            self.logging.log()
         if (team1_has_bet and team1_score >= final_bet.bet) or (not team1_has_bet and team2_score >= final_bet.bet):
             if team1_has_bet:
                 return final_bet.bet, team2_score
@@ -95,6 +106,7 @@ class Game(object):
         elif self.team_2_score >= 1165 or self.team_2_score - self.team_1_score >= 1165:
             return True
         return False
+
 if __name__ == '__main__':
     Game().begin_game()
 

@@ -14,7 +14,7 @@ class Card(object):
         if self.value == 0:
             self.name = "Joker"
         else:
-            self.name = "%s of %s" % (value.name.title(), suit.name.title())
+            self.name = "%s of %s" % (value.value.name.title(), suit.name.title())
 
     def __eq__(self, other):
         return isinstance(other, Card) and self.value == other.value and self.suit == other.suit

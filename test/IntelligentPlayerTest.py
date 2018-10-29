@@ -1,8 +1,9 @@
 import unittest
 
-from dealer.IntelligentPlayer import IntelligentPlayer
+from players.Player import Bet
+
 from dealer.Deck import Deck
-from dealer.Player import Bet
+from players.IntelligentPlayer import IntelligentPlayer
 
 
 class IntelligentPlayerTest(unittest.TestCase):

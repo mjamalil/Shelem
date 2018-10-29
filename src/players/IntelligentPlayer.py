@@ -1,9 +1,9 @@
 import random
 from typing import Tuple, List
 
-from dealer.Player import Player, Bet
-from dealer.Utils import GAMEMODE, SUITS
 from dealer.Card import Card
+from dealer.Utils import GAMEMODE, SUITS
+from players.Player import Player, Bet
 
 
 class IntelligentPlayer(Player):

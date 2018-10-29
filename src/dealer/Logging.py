@@ -1,9 +1,9 @@
 from typing import List
 
-from dealer.Deck import Hand, Deck
 from dealer.Card import Card
-from dealer.Player import Bet
+from dealer.Deck import Hand, Deck
 from dealer.Utils import GAMEMODE, SUITS
+from players.Player import Bet
 
 
 class Logging(object):

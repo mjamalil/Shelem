@@ -1,15 +1,16 @@
-from typing import Tuple
+from typing import Tuple, List
 
-from dealer.Logging import Logging
-from dealer.Deck import Deck, Hand
-from dealer.Player import Player
 from collections import deque
+
+from dealer.Deck import Deck
+from dealer.Logging import Logging
+from players.Player import Player
 
 
 class Game(object):
-    def __init__(self, verbose: bool = False):
+    def __init__(self, players: List[Player], verbose: bool = False):
         self.french_deck = Deck()
-        self.players = [Player(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]
+        self.players = players
         self.player_id_receiving_first_hand = 0
         self.team_1_score = 0
         self.team_2_score = 0
@@ -108,7 +109,7 @@ class Game(object):
         return False
 
 if __name__ == '__main__':
-    Game().begin_game()
+    Game([Player(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()
 
 
 

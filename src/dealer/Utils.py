@@ -24,10 +24,10 @@ class OrderedEnum(Enum):
 
 
 class SUITS(Enum):
-    DIAMONDS = auto()
-    CLUBS = auto()
-    HEARTS = auto()
     SPADES = auto()
+    CLUBS = auto()
+    DIAMONDS = auto()
+    HEARTS = auto()
     NEITHER = auto()
 
 

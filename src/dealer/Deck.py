@@ -184,36 +184,50 @@ class Deck(object):
         else:
             return False
 
+
 class SortedCards(object):
-    def __init__(self):
-        self.cards = {SUITS.SPADES:[], SUITS.CLUBS:[], SUITS.DIAMONDS:[], SUITS.HEARTS:[]}
+    def __init__(self, cards=None):
+        if isinstance(cards, dict):
+            self.cards = dict(cards)
+        else:
+            self.cards = {SUITS.SPADES: [], SUITS.CLUBS: [], SUITS.DIAMONDS: [], SUITS.HEARTS: [], SUITS.NEITHER: []}
 
     def __add__(self, other):
         if isinstance(other, Deck):
-            result = SortedCards()
-            for card in self._cards:
-                result.cards[card.suit].append(card)
+            result = SortedCards(self.cards)
             for card in other._cards:
                 result.cards[card.suit].append(card)
         elif isinstance(other, Card):
-            result = SortedCards()
-            for card in self._cards:
-                result.cards[card.suit].append(card)
+            result = SortedCards(self.cards)
             result.cards[other.suit].append(other)
         else:
             raise NotImplementedError
-        for key, _ in result.cards.iteritems():
+        for key, _ in result.cards.items():
             sorted(result.cards[key])
         return result
 
     def __getitem__(self, key):
-        index = key
+        if isinstance(key, int):
+            index = key
+            for s in SUITS:
+                try:
+                    return self.cards[s][index]
+                except IndexError:
+                    index -= len(self.cards[s])
+        if isinstance(key, Tuple):
+            index = key[1]
+            suit = key[0]
+            return self.cards[suit][index]
+        raise IndexError('Index out of range in cards')
+
+    def __delitem__(self, index):
         for s in SUITS:
             try:
-                return self.cards[s][index]
-            except KeyError:
+                del self.cards[s][index]
+                return
+            except IndexError:
                 index -= len(self.cards[s])
-        raise KeyError('Index out of range in cards')
+        raise IndexError('Index out of range in cards')
 
     def __len__(self):
         total_size = 0
@@ -226,13 +240,13 @@ class SortedCards(object):
         for s in SUITS:
             try:
                 self.cards[s][index]
-            except KeyError:
+            except IndexError:
                 index -= len(self.cards[s])
             else:
-                return (s, index)
-        raise KeyError('Index out of range in cards')
+                return s, index
+        raise IndexError('Index out of range in cards')
     
-    def pop(self, index, suit = SUITS.NEITHER):
+    def pop(self, index, suit=SUITS.NEITHER):
         if suit is SUITS.NEITHER:
             card = self[index]
             del self[index]
@@ -249,4 +263,4 @@ class SortedCards(object):
         if not suit_size:
             raise IndexError("pop from empty set of cards")    
         return self.pop((random.choice(range(suit_size))))
-        
+

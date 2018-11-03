@@ -25,7 +25,7 @@ class Bet(object):
 
 class Player(object):
     def __init__(self, player_id, team_mate_player_id):
-        self.cards = SortedCards()
+        self.hand = SortedCards()
         self.saved_deck = Deck()
         self.is_hakem = False
         self.game_has_begun = False
@@ -35,7 +35,7 @@ class Player(object):
         self.team_mate_player_id = team_mate_player_id
 
     def begin_game(self, deck: Deck):
-        self.cards += Deck
+        self.hand += deck
         self.game_has_begun = True
         self.saved_deck = Deck()
 
@@ -53,14 +53,13 @@ class Player(object):
         if not self.game_has_begun:
             raise ValueError("Game has not started yet")
         self.is_hakem = True
-        self.cards += middle_hand
+        self.hand += middle_hand
 
+        # The index of discarding cards should be decreasingly sorted
+        # in order to maintain correct index in deletion
         discarding_cards, game_mode, hokm_suit = self.decide_hokm()
         for card in discarding_cards:
-            self.saved_deck += self.cards[card[0]][card[1]]
-
-        for card in discarding_cards:
-            self.cards[card[0]].pop(card[1])
+            self.saved_deck += self.hand.pop(card[1], card[0])
             
         return game_mode, hokm_suit
 
@@ -77,7 +76,7 @@ class Player(object):
             suit = self.hokm_suit
         else:
             suit = SUITS.NEITHER
-        return self.cards.pop_random_from_suit(suit)
+        return self.hand.pop_random_from_suit(suit)
 
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
         """
@@ -103,15 +102,15 @@ class Player(object):
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 
         """
-        if self.is_hakem == False:
+        if not self.is_hakem:
             raise Exception("non-hakem player is discarding cards")
         random_list = []
         indices = random.sample(range(16), 4)
         for ind in indices:
             try:
-                random_list.append(self.cards.get_suit_number(ind))
-            except KeyError:
+                random_list.append(self.hand.get_suit_number(ind))
+            except IndexError:
                 raise RuntimeError("not enough cards in hakem's hand")
 
-        return random_list, self.game_mode, self.cards[0].suit
-        
+        return sorted(random_list, key=lambda x: x[1], reverse=True), self.game_mode, self.hand[0].suit
+

@@ -8,8 +8,7 @@ from players.Player import Player, Bet
 class RuleBasedPlayer(Player):
     def __init__(self, player_id, team_mate_player_id):
         super(RuleBasedPlayer, self).__init__(player_id, team_mate_player_id)
-        self.deck.sort()
-        self.cards = 
+        self.hand.sort()
 
     # def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
     def decide_hokm(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
@@ -20,7 +19,7 @@ class RuleBasedPlayer(Player):
         
         cnts = Counter()
         mappings = {}
-        for ind, card in enumerate(self.deck._cards):
+        for ind, card in enumerate(self.hand._cards):
             cnts[card.suit] += 1
             if card.suit not in mappings:
                 mappings[card.suit] = []

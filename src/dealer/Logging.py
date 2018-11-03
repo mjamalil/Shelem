@@ -19,10 +19,10 @@ class Logging(object):
         self.hands.append(Hand(player_id, hand))
 
     def log(self):
-        print("Middle Deck:\n{}".format("\t".join(["   [{:14s}]    ".format(str(x)) for x in self.middle_deck.cards])))
+        print("Middle Cards:\n{}".format("\t".join(["   [{:14s}]    ".format(str(x)) for x in self.middle_deck.cards])))
         print("Betting Info:\tPlayer Id: {}\tScore: {}".format(self.bet.player_id, self.bet.bet))
         print("Hokm: {}\t\tGame Mode: {}".format(self.hokm_suit.name.title(), self.game_mode.name.title()))
-        print("Hakem Saved Deck:\n{}\n\n".format("\t".join(["   [{:14s}]    ".format(str(x)) for x in self.saved_hand.cards])))
+        print("Hakem discarded the following cards:\n{}\n\n".format("\t".join(["   [{:14s}]    ".format(str(x)) for x in self.saved_hand.cards])))
         for hand in self.hands:
             print(hand)
 

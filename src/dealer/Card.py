@@ -1,6 +1,7 @@
 from unicards import unicard
 from dealer.Utils import SUITS, GAMEMODE, VALUES
 
+
 class Card(object):
     def __init__(self, value: VALUES, suit: SUITS):
         """
@@ -91,8 +92,3 @@ class Card(object):
             return "T%s" % (suit.name[0])
         else:
             return "%s%s" % (value.value.name[0], suit.name[0])
-
-        
-        
-        
-        

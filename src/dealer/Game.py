@@ -29,6 +29,8 @@ class Game(object):
         initially_passed_count = 0
         betting_rounds = 0
         last_bets = []
+
+        # betting round
         while len(betting_players) > 1:
             if initially_passed_count == 3:
                 # raise RuntimeError("Three first players have passed, the game must re-init")
@@ -42,14 +44,18 @@ class Game(object):
             elif player_bet.bet == 0 and 3 > betting_rounds == initially_passed_count:  # he has passed
                 initially_passed_count += 1
                 betting_rounds += 1
+
+        # deciding hakem and discarding 4 cards
         hakem = betting_players.popleft()
         last_winner_id = hakem.player_id
         self.logging.log_bet(last_bets[-1])
-        game_mode, hokm_suit = hakem.make_hakem(middle_deck)
+        game_mode, hokm_suit = hakem.init_hakem(middle_deck)
         self.logging.log_hakem_saved_hand(Deck(hakem.saved_deck))
         self.logging.log_hokm(game_mode, hokm_suit)
         for i in range(4):
             self.players[i].set_hokm_and_game_mode(game_mode, hokm_suit)
+
+        # start the actual round
         hands_played = []
         for i in range(12):
             first_player = last_winner_id
@@ -67,6 +73,8 @@ class Game(object):
             hands_played.append(current_hand)
             self.logging.add_hand(first_player, current_hand)
             self.players[last_winner_id].store_hand(current_hand)
+
+        # calculate the scores
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
         team1_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         team2_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
@@ -109,7 +117,7 @@ class Game(object):
         return False
 
 if __name__ == '__main__':
-    Game([Player(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()
+    Game([Player(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).play_a_round()
 
 
 

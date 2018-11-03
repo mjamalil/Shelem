@@ -1,23 +1,23 @@
-import random
 from typing import Tuple, List
 from collections import Counter
 
 from dealer.Card import Card
 from dealer.Utils import GAMEMODE, SUITS
-from players.Player import Player, Bet
-
+from players.Player import Player, Bet     
 
 class RuleBasedPlayer(Player):
     def __init__(self, player_id, team_mate_player_id):
         super(RuleBasedPlayer, self).__init__(player_id, team_mate_player_id)
+        self.deck.sort()
+        self.cards = 
 
     # def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
-    def select_saving_card_hand(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
+    def decide_hokm(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 
         """
-        self.deck._cards = sorted(self.deck._cards)
+        
         cnts = Counter()
         mappings = {}
         for ind, card in enumerate(self.deck._cards):

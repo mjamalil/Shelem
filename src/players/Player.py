@@ -2,7 +2,7 @@ import random
 from typing import Tuple, List
 
 from dealer.Card import Card
-from dealer.Deck import Deck
+from dealer.Deck import Deck, SortedCards
 from dealer.Utils import GAMEMODE, SUITS
 
 
@@ -25,7 +25,7 @@ class Bet(object):
 
 class Player(object):
     def __init__(self, player_id, team_mate_player_id):
-        self.deck = Deck()
+        self.cards = SortedCards()
         self.saved_deck = Deck()
         self.is_hakem = False
         self.game_has_begun = False
@@ -35,7 +35,7 @@ class Player(object):
         self.team_mate_player_id = team_mate_player_id
 
     def begin_game(self, deck: Deck):
-        self.deck = deck
+        self.cards += Deck
         self.game_has_begun = True
         self.saved_deck = Deck()
 
@@ -46,22 +46,22 @@ class Player(object):
     def store_hand(self, hand: List[Card]):
         self.saved_deck += hand
 
-    def make_hakem(self, middle_hand: Deck)-> Tuple[GAMEMODE, SUITS]:
+    def init_hakem(self, middle_hand: Deck)-> Tuple[GAMEMODE, SUITS]:
         """ 
         :return: Game mode and hokm suit 
         """
         if not self.game_has_begun:
             raise ValueError("Game has not started yet")
         self.is_hakem = True
-        self.deck += middle_hand
-        new_deck = Deck([])
-        saving_indices, game_mode, hokm_suit = self.select_saving_card_hand()
-        for ind in range(16):
-            if ind in saving_indices:
-                self.saved_deck += self.deck[ind]
-            else:
-                new_deck += self.deck[ind]
-        self.deck = new_deck
+        self.cards += middle_hand
+
+        discarding_cards, game_mode, hokm_suit = self.decide_hokm()
+        for card in discarding_cards:
+            self.saved_deck += self.cards[card[0]][card[1]]
+
+        for card in discarding_cards:
+            self.cards[card[0]].pop(card[1])
+            
         return game_mode, hokm_suit
 
     def play_a_card(self, hands_played: List[List[Card]], current_hand: List[Card]) -> Card:
@@ -72,17 +72,18 @@ class Player(object):
 
         if current_hand:
             suit = current_hand[0].suit
+        # first player and first hand
         elif not hands_played and not current_hand:
             suit = self.hokm_suit
         else:
             suit = SUITS.NEITHER
-        return self.deck.pop_random_from_suit(suit)
+        return self.cards.pop_random_from_suit(suit)
 
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
         """
         :return: Pass / 100 < score < 165 / Shelem / Sar-Shelem / Super-Shelem
          Base on a 12-card hand available
-         Sacore should be strictly > previous_last_bet
+         Score should be strictly > previous_last_bet
         """
         # TODO: NotImplemented
         choice = random.random()
@@ -97,9 +98,20 @@ class Player(object):
         else:
             return Bet(self.player_id, random.randint(31, 33) * 5)
 
-    def select_saving_card_hand(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
+    def decide_hokm(self) -> Tuple[List[Tuple[SUITS, int]], GAMEMODE, SUITS]:
         """
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 
         """
-        return random.sample(range(16), 4), self.game_mode, self.deck.cards[0].suit
+        if self.is_hakem == False:
+            raise Exception("non-hakem player is discarding cards")
+        random_list = []
+        indices = random.sample(range(16), 4)
+        for ind in indices:
+            try:
+                random_list.append(self.cards.get_suit_number(ind))
+            except KeyError:
+                raise RuntimeError("not enough cards in hakem's hand")
+
+        return random_list, self.game_mode, self.cards[0].suit
+        

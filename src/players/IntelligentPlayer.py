@@ -14,7 +14,7 @@ class IntelligentPlayer(Player):
         """
         :return: Pass / 100 < score < 165 / Shelem / Sar-Shelem / Super-Shelem
          Base on a 12-card hand available
-         Sacore should be strictly > previous_last_bet
+         Score should be strictly > previous_last_bet
         """
         # TODO: NotImplemented
         choice = random.random()
@@ -29,7 +29,7 @@ class IntelligentPlayer(Player):
         else:
             return Bet(self.player_id, random.randint(31, 33) * 5)
 
-    def select_saving_card_hand(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
+    def decide_hokm(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 

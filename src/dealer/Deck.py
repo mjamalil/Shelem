@@ -98,6 +98,9 @@ class Deck(object):
                     continue
                 built_cards.append(Card(val, suit))
         return list(sorted(built_cards))
+    
+    def sort(self):
+        self.deck._cards = sorted(self.deck._cards)
 
     def __add__(self, other):
         if isinstance(other, Deck):
@@ -180,3 +183,70 @@ class Deck(object):
             return True
         else:
             return False
+
+class SortedCards(object):
+    def __init__(self):
+        self.cards = {SUITS.SPADES:[], SUITS.CLUBS:[], SUITS.DIAMONDS:[], SUITS.HEARTS:[]}
+
+    def __add__(self, other):
+        if isinstance(other, Deck):
+            result = SortedCards()
+            for card in self._cards:
+                result.cards[card.suit].append(card)
+            for card in other._cards:
+                result.cards[card.suit].append(card)
+        elif isinstance(other, Card):
+            result = SortedCards()
+            for card in self._cards:
+                result.cards[card.suit].append(card)
+            result.cards[other.suit].append(other)
+        else:
+            raise NotImplementedError
+        for key, _ in result.cards.iteritems():
+            sorted(result.cards[key])
+        return result
+
+    def __getitem__(self, key):
+        index = key
+        for s in SUITS:
+            try:
+                return self.cards[s][index]
+            except KeyError:
+                index -= len(self.cards[s])
+        raise KeyError('Index out of range in cards')
+
+    def __len__(self):
+        total_size = 0
+        for s in SUITS:
+            total_size += len(self.cards[s])
+        return total_size
+
+    def get_suit_number(self, key):
+        index = key
+        for s in SUITS:
+            try:
+                self.cards[s][index]
+            except KeyError:
+                index -= len(self.cards[s])
+            else:
+                return (s, index)
+        raise KeyError('Index out of range in cards')
+    
+    def pop(self, index, suit = SUITS.NEITHER):
+        if suit is SUITS.NEITHER:
+            card = self[index]
+            del self[index]
+            return card
+        card = self.cards[suit][index]
+        del self.cards[suit][index]
+        return card
+
+    def pop_random_from_suit(self, suit: SUITS):
+        forced_suit_size = len(self.cards[suit])
+        if forced_suit_size:
+            return self.cards[suit].pop(random.choice(range(forced_suit_size)))
+        suit_size = len(self)
+        if not suit_size:
+            raise IndexError("pop from empty set of cards")    
+        return self.pop((random.choice(range(suit_size))))
+        

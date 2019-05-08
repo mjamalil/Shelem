@@ -3,4 +3,4 @@ venv/
 *.iml
 */*/*.pyc
 .DS_Store
-src/dealer/__pycache__/
+**/__pycache__/

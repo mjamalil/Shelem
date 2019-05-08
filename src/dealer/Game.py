@@ -5,6 +5,7 @@ from collections import deque
 from dealer.Deck import Deck
 from dealer.Logging import Logging
 from players.Player import Player
+from players.RuleBasedPlayer import RuleBasedPlayer
 
 
 class Game(object):
@@ -56,10 +57,12 @@ class Game(object):
             next_player_id = last_winner_id
             current_hand = []
             winner_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
+            self.players[next_player_id].check_played_card(winner_card, current_hand, i == 0)
             current_hand.append(winner_card)
             for _ in range(3):
                 next_player_id = (next_player_id + 1) % 4
                 played_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
+                self.players[next_player_id].check_played_card(played_card, current_hand)
                 current_hand.append(played_card)
                 if winner_card.compare(played_card, game_mode, hokm_suit) == -1:
                     last_winner_id = next_player_id
@@ -110,7 +113,7 @@ class Game(object):
 
 
 if __name__ == '__main__':
-    Game([Player(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()
+    Game([RuleBasedPlayer(0, 2), Player(1, 3), RuleBasedPlayer(2, 0), Player(3, 1)]).begin_game()
 
 
 

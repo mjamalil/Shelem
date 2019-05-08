@@ -46,7 +46,19 @@ class Player(object):
     def store_hand(self, hand: List[Card]):
         self.saved_deck += hand
 
-    def make_hakem(self, middle_hand: Deck)-> Tuple[GAMEMODE, SUITS]:
+    def check_played_card(self, played_card, current_hand, first=False):
+        if first and self.game_mode == GAMEMODE.NORMAL and played_card.suit is not self.hokm_suit:
+            raise RuntimeError("Hakem didn't start with hokm")
+
+        if current_hand:
+            leading_suit = current_hand[0].suit
+            if played_card.suit != leading_suit:
+                for card in self.deck.cards:
+                    if card.suit == leading_suit:
+                        raise RuntimeError(f"Player played {played_card} whereas the leading suit is {leading_suit}."
+                                           f" He could have played {card}")
+
+    def make_hakem(self, middle_hand: Deck) -> Tuple[GAMEMODE, SUITS]:
         """ 
         :return: Game mode and hokm suit 
         """
@@ -55,7 +67,7 @@ class Player(object):
         self.is_hakem = True
         self.deck += middle_hand
         new_deck = Deck([])
-        saving_indices, game_mode, hokm_suit = self.select_saving_card_hand()
+        saving_indices, game_mode, hokm_suit = self.discard_cards_decide_hokm()
         for ind in range(16):
             if ind in saving_indices:
                 self.saved_deck += self.deck[ind]
@@ -68,10 +80,11 @@ class Player(object):
         """
         :return: pops and plays the best available card in the current hand  
         """
-        # TODO: NotImplemented
-
+        # TODO: Can be improved
+        # if I'm not the first player
         if current_hand:
             suit = current_hand[0].suit
+        # if I'm the first player and hakem
         elif not hands_played and not current_hand:
             suit = self.hokm_suit
         else:
@@ -84,7 +97,7 @@ class Player(object):
          Base on a 12-card hand available
          Sacore should be strictly > previous_last_bet
         """
-        # TODO: NotImplemented
+        # TODO: Can be improved
         choice = random.random()
         if choice < 0.4:
             return Bet(self.player_id, 0)
@@ -97,7 +110,7 @@ class Player(object):
         else:
             return Bet(self.player_id, random.randint(31, 33) * 5)
 
-    def select_saving_card_hand(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
+    def discard_cards_decide_hokm(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 

@@ -108,6 +108,7 @@ class Game(object):
             return True
         return False
 
+
 if __name__ == '__main__':
     Game([Player(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()
 

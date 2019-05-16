@@ -1,4 +1,5 @@
-from typing import List, Tuple, Any
+import copy
+from typing import List, Tuple, Any, Dict
 
 from dealer import Utils
 from dealer.Utils import SUITS, VALUES
@@ -29,7 +30,7 @@ class Hand(object):
 
 
 class Deck(object):
-    def __init__(self, cards: List[Card]=None, deck_id: int=0):
+    def __init__(self, cards: List[Card] = None, deck_id: int=0):
         if cards is None:
             cards = []
         self._cards = list(sorted(cards))
@@ -180,3 +181,64 @@ class Deck(object):
             return True
         else:
             return False
+
+    def __iter__(self):
+        for x in self._cards:
+            yield x
+
+
+class SortedCards(object):
+    def __init__(self, cards=None):
+        if cards is None:
+            cards = []
+
+        self._cards = {}
+        for card in cards:
+            if card.suit in self._cards:
+                self._cards[card.suit].append(card.value)
+            else:
+                self._cards[card.suit] = [card.value, ]
+        self.self_sort()
+
+    @property
+    def num_of_cards(self):
+        count = 0
+        for suit in SUITS:
+            count += len(self.my_cards[suit])
+        return count
+
+    def self_sort(self):
+        for suit in SUITS:
+            if suit in self._cards:
+                self._cards[suit] = sorted(self._cards[suit])
+            else:
+                self._cards[suit] = []
+
+    def __getitem__(self, item: SUITS):
+        return self._cards[item]
+
+    def add_card(self, other):
+        if isinstance(other, Deck) or isinstance(other, list):
+            for card in Deck:
+                self._cards[card.suit].append(card.value)
+        elif isinstance(other, Card):
+            self._cards[other.suit].append(other.value)
+        else:
+            raise NotImplementedError
+        self.self_sort(self)
+
+    def pop_random_from_suit(self, suit: SUITS = SUITS.NEITHER):
+        if suit is SUITS.NEITHER:
+            random_card = random.randint(0, self.num_of_cards)
+            for suit in SUITS:
+                try:
+                    return self._cards.pop(random_card)
+                except IndexError:
+                    random_card -= len(self.my_cards[suit])
+        else:
+            num_of_cards_in_suit = len(self._cards[suit])
+            if num_of_cards_in_suit:
+                return self._cards.pop(random.randint(0, num_of_cards_in_suit))
+            else:
+                return self.pop_random_from_suit()
+        raise RuntimeError("can't find a random card")

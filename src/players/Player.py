@@ -2,7 +2,7 @@ import random
 from typing import Tuple, List
 
 from dealer.Card import Card
-from dealer.Deck import Deck
+from dealer.Deck import Deck, SortedCards
 from dealer.Utils import GAMEMODE, SUITS
 
 
@@ -25,18 +25,21 @@ class Bet(object):
 
 class Player(object):
     def __init__(self, player_id, team_mate_player_id):
-        self.deck = Deck()
+        # self.my_cards = SortedCards()
+        self.my_cards = None
         self.saved_deck = Deck()
         self.is_hakem = False
-        self.game_has_begun = False
         self.game_mode = GAMEMODE.NORMAL
         self.hokm_suit = SUITS.NEITHER
         self.player_id = player_id
         self.team_mate_player_id = team_mate_player_id
 
+    @property
+    def game_has_begun(self):
+        return self.my_cards is not None
+
     def begin_game(self, deck: Deck):
-        self.deck = deck
-        self.game_has_begun = True
+        self.my_cards = SortedCards(deck.cards)
         self.saved_deck = Deck()
 
     def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS):
@@ -53,10 +56,9 @@ class Player(object):
         if current_hand:
             leading_suit = current_hand[0].suit
             if played_card.suit != leading_suit:
-                for card in self.deck.cards:
-                    if card.suit == leading_suit:
-                        raise RuntimeError(f"Player played {played_card} whereas the leading suit is {leading_suit}."
-                                           f" He could have played {card}")
+                if self.my_cards[leading_suit]:
+                    raise RuntimeError(f"Player played {played_card} whereas the leading suit is {leading_suit}."
+                                       f" He could have played {self.my_cards[leading_suit][0]}")
 
     def make_hakem(self, middle_hand: Deck) -> Tuple[GAMEMODE, SUITS]:
         """ 
@@ -65,15 +67,8 @@ class Player(object):
         if not self.game_has_begun:
             raise ValueError("Game has not started yet")
         self.is_hakem = True
-        self.deck += middle_hand
-        new_deck = Deck([])
-        saving_indices, game_mode, hokm_suit = self.discard_cards_decide_hokm()
-        for ind in range(16):
-            if ind in saving_indices:
-                self.saved_deck += self.deck[ind]
-            else:
-                new_deck += self.deck[ind]
-        self.deck = new_deck
+        self.my_cards.add_card(middle_hand)
+        game_mode, hokm_suit = self.discard_cards_decide_hokm()
         return game_mode, hokm_suit
 
     def play_a_card(self, hands_played: List[List[Card]], current_hand: List[Card]) -> Card:
@@ -89,7 +84,7 @@ class Player(object):
             suit = self.hokm_suit
         else:
             suit = SUITS.NEITHER
-        return self.deck.pop_random_from_suit(suit)
+        return self.my_cards.pop_random_from_suit(suit)
 
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
         """
@@ -115,4 +110,13 @@ class Player(object):
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 
         """
-        return random.sample(range(16), 4), self.game_mode, self.deck.cards[0].suit
+        self.saved_deck += self.my_cards.pop_random_from_suit()
+        # decide the suit with maximum number to be the hokm
+        best_suit = None
+        maximum_num = 0
+        for suit in SUITS:
+            if len(self.my_cards[suit]) > maximum_num:
+                maximum_num = len(self.my_cards[suit])
+                best_suit = suit
+
+        return self.game_mode, best_suit

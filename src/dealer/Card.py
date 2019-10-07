@@ -1,8 +1,9 @@
 from unicards import unicard
+
 from dealer.Utils import SUITS, GAMEMODE, VALUES
 
 
-class Card(object):
+class Card:
     def __init__(self, value: VALUES, suit: SUITS):
         """
         :param value: one of the key/vlues in Utils.VALUES 
@@ -16,23 +17,24 @@ class Card(object):
         else:
             self.name = "%s of %s" % (value.value.name.title(), suit.name.title())
 
-    def __eq__(self, other):
-        return isinstance(other, Card) and self.value == other.value and self.suit == other.suit
-
-    def __ne__(self, other):
-        return not isinstance(other, Card) or self.value != other.value or self.suit != other.suit
-
-    def __ge__(self, other):
-        if isinstance(other, Card):
-            return self.value > other.value or (self.value >= other.value and self.suit >= other.suit)
-        else:
-            return False
-
-    def __gt__(self, other):
-        if isinstance(other, Card):
-            return self.value > other.value or (self.value >= other.value and self.suit > other.suit)
-        else:
-            return False
+    # def __gt__(self, other):
+    #     from dealer.Game import game_mode, hokm_suit
+    #     if isinstance(other, Card):
+    #         if game_mode == GAMEMODE.NORMAL:
+    #             return (self.suit == other.suit and self.ranked_value > other.ranked_value) or \
+    #                    (self.suit != other.suit and self.suit == hokm_suit)
+    #         else:
+    #             return self.suit == other.suit and self.ranked_value > other.ranked_value
+    #     raise RuntimeError('Comparing card with something else')
+    #
+    # def __lt__(self, other):
+    #     if isinstance(other, Card):
+    #         if game_mode == GAMEMODE.NORMAL:
+    #             return (self.suit == other.suit and self.ranked_value < other.ranked_value) or \
+    #                    (self.suit != other.suit and other.suit == hokm_suit)
+    #         else:
+    #             return self.suit == other.suit and self.ranked_value < other.ranked_value
+    #     raise RuntimeError('Comparing card with something else')
 
     def __hash__(self):
         return hash((self.value, self.suit))
@@ -43,46 +45,34 @@ class Card(object):
     def __str__(self):
         return self.name
 
-    def __lt__(self, other):
-        if isinstance(other, Card):
-            return True
+    def ranked_value(self, game_mode):
+        if game_mode is None:
+            raise RuntimeError('Game mode is not defined yet')
+        if game_mode == GAMEMODE.NORMAL or game_mode == GAMEMODE.SARAS:
+            return self.value.value.normal_value
+        elif game_mode == GAMEMODE.NARAS:
+            return self.value.value.naras_value
+        elif game_mode == GAMEMODE.ACE_NARAS:
+            return self.value.value.ace_naras_value
         else:
-            return False
+            raise NotImplementedError
 
-    def compare(self, other, game_mode, hokm_suit):
+    def is_greater(self, other, game_mode, hokm_suit):
         """
-        Only the first players card is supposed to call the compare function to other cards
+        Only the first players card is supposed to call the is_greater function to other cards
         :param other: another card to be compared
         :param game_mode: the mode in which the game is being played
         :param hokm_suit: the hokm suit is considered only if is_naras=False / can be None[saras] 
-        :return:    1: self is greater
-                    0: equal [must not happen]
-                    -1: other is greater
-                    -2: other if not a Card [error]
+        :return:    True: self is greater
+                    False: other is greater
         """
         if isinstance(other, Card):
-            my_value = self.value.value.get_value(game_mode)
-            other_value = other.value.value.get_value(game_mode)
-            if self.suit == other.suit:
-                if my_value > other_value:
-                    return 1
-                elif my_value == other_value:
-                    return 0
-                else:
-                    return -1
-            elif game_mode == GAMEMODE.NORMAL:
-                if hokm_suit == SUITS.NEITHER:
-                    raise ValueError("In normal game mode you cannot have Hokm == Neither")
-                if self.suit == hokm_suit:
-                    return 1
-                elif other.suit == hokm_suit:
-                    return -1
-                else:
-                    return 1
+            if game_mode == GAMEMODE.NORMAL:
+                return (self.suit == other.suit and self.ranked_value(game_mode) > other.ranked_value(game_mode)) or \
+                       (self.suit != other.suit and self.suit == hokm_suit)
             else:
-                return 1
-        else:
-            return -2
+                return self.suit == other.suit and self.ranked_value(game_mode) > other.ranked_value(game_mode)
+        raise RuntimeError('Comparing card with something else')
 
     @staticmethod
     def card_abbrev(value, suit):

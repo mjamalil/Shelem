@@ -6,6 +6,8 @@ from dealer import Deck
 from dealer.Card import Card
 from dealer.Utils import GAMEMODE, SUITS
 from players.Player import Player
+BEST_SUIT = -1
+WORST_SUIT = 0
 
 
 class RuleBasedPlayer(Player):
@@ -14,14 +16,11 @@ class RuleBasedPlayer(Player):
 
     def begin_game(self, deck: Deck):
         super().begin_game(deck)
-        self.deck._cards = sorted(self.deck._cards)
-        self.cnts = Counter()
-        self.mappings = {}
-        for ind, card in enumerate(self.deck._cards):
-            self.cnts[card.suit] += 1
-            if card.suit not in self.mappings:
-                self.mappings[card.suit] = []
-            self.mappings[card.suit].append(ind)
+        # self.deck._cards = sorted(self.deck._cards)
+        # self.card_by_suit = {}
+        # if card.suit not in self.card_by_suit:
+        #     self.card_by_suit[card.suit] = []
+        # self.card_by_suit[card.suit].append(ind)
 
     # def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
     def discard_cards_decide_hokm(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
@@ -29,15 +28,13 @@ class RuleBasedPlayer(Player):
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 
         """
-        hokm_suit = self.cnts.most_common()[0][0]
-        discard_hand = []
-        last_index = -1
-        while len(discard_hand) < 4:
-            lst = self.mappings[self.cnts.most_common()[last_index][0]]
-            discard_hand.append(lst.pop())
-            if not lst:
-                last_index -= 1
-        return tuple(discard_hand), self.game_mode, hokm_suit
+        # gets the best suit
+        hokm_suit = self.my_cards.most_common[BEST_SUIT][0]
+        for _ in range(4):
+            worst_suit = self.my_cards.most_common[WORST_SUIT][0]
+            discarded = self.my_cards.pop_card(worst_suit)
+            self.saved_deck += discarded
+        return GAMEMODE.NORMAL, hokm_suit
 
     def play_a_card(self, hands_played: List[List[Card]], current_hand: List[Card]) -> Card:
         # TODO: not implemented

@@ -2,11 +2,11 @@ import random
 from typing import Tuple, List
 
 from dealer.Card import Card
-from dealer.Deck import Deck, SortedCards
+from dealer.Deck import Deck, Hand
 from dealer.Utils import GAMEMODE, SUITS
 
 
-class Bet(object):
+class Bet:
     def __init__(self, player_id, bet_score):
         self.player_id = player_id
         self.bet_score = bet_score
@@ -23,9 +23,9 @@ class Bet(object):
         return "Bet(player_id=%r, score=%r)" % (self.id, self.bet)
 
 
-class Player(object):
+class Player:
     def __init__(self, player_id, team_mate_player_id):
-        # self.my_cards = SortedCards()
+        # self.my_cards = Hand()
         self.my_cards = None
         self.saved_deck = Deck()
         self.is_hakem = False
@@ -34,12 +34,20 @@ class Player(object):
         self.player_id = player_id
         self.team_mate_player_id = team_mate_player_id
 
+    def __repr__(self):
+        output = ''
+        if self.player_id is not None:
+            output = f'Player{self.player_id}'
+        if self.is_hakem:
+            output += ' (hakem)'
+        return output
+
     @property
     def game_has_begun(self):
         return self.my_cards is not None
 
     def begin_game(self, deck: Deck):
-        self.my_cards = SortedCards(deck.cards)
+        self.my_cards = Hand(deck.cards)
         self.saved_deck = Deck()
 
     def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS):
@@ -119,4 +127,4 @@ class Player(object):
                 maximum_num = len(self.my_cards[suit])
                 best_suit = suit
 
-        return self.game_mode, best_suit
+        return GAMEMODE.NORMAL, best_suit

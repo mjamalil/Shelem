@@ -8,7 +8,7 @@ from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
 
 
-class Game(object):
+class Game:
     def __init__(self, players: List[Player], verbose: bool = False):
         self.french_deck = Deck()
         self.players = players
@@ -32,7 +32,7 @@ class Game(object):
         last_bets = []
         while len(betting_players) > 1:
             if initially_passed_count == 3:
-                # raise RuntimeError("Three first players have passed, the game must re-init")
+                # Three consecutive pass  the game must re-init
                 self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
                 self.play_a_round()
             bp = betting_players.popleft()
@@ -59,12 +59,13 @@ class Game(object):
             winner_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
             self.players[next_player_id].check_played_card(winner_card, current_hand, i == 0)
             current_hand.append(winner_card)
+            # players playing a card
             for _ in range(3):
                 next_player_id = (next_player_id + 1) % 4
                 played_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
                 self.players[next_player_id].check_played_card(played_card, current_hand)
                 current_hand.append(played_card)
-                if winner_card.compare(played_card, game_mode, hokm_suit) == -1:
+                if played_card.is_greater(winner_card, game_mode, hokm_suit):
                     last_winner_id = next_player_id
                     winner_card = played_card
             hands_played.append(current_hand)
@@ -81,26 +82,27 @@ class Game(object):
             self.logging.log()
         if (team1_has_bet and team1_score >= final_bet.bet) or (not team1_has_bet and team2_score >= final_bet.bet):
             if team1_has_bet:
-                return final_bet.bet, team2_score
+                return '1', final_bet.bet, final_bet.bet, team2_score
             else:
-                return team1_score, final_bet.bet
+                return '2', final_bet.bet, team1_score, final_bet.bet
         elif (team1_has_bet and team2_score < 85) or (not team1_has_bet and team1_score < 85):
             if team1_has_bet:
-                return -final_bet.bet, team2_score
+                return '1', final_bet.bet, -final_bet.bet, team2_score
             else:
-                return team1_score, -final_bet.bet
+                return '2', final_bet.bet, team1_score, -final_bet.bet
         elif team1_has_bet:
-            return -2 * final_bet.bet, team2_score
+            return '1', final_bet.bet, -2 * final_bet.bet, team2_score
         else:
-            return team1_score, -2 * final_bet.bet
+            return '2', final_bet.bet, team1_score, -2 * final_bet.bet
 
     def begin_game(self):
         round_counter = 1
         while not self.check_game_finished():
-            s1, s2 = self.play_a_round()
-            self.team_1_score += s1
-            self.team_2_score += s2
-            print("Round {}: Team 1 score = {} and Team 2 score = {}".format(round_counter, s1, s2))
+            team, bet, score1, score2 = self.play_a_round()
+            self.team_1_score += score1
+            self.team_2_score += score2
+            print("Round {}: Team {} has bet {:d} and Team 1:{} and Team 2:{}".format(
+                str(round_counter).rjust(3, ' '), team, bet, str(score1).rjust(4, ' '), str(score2).rjust(4, ' ')))
             round_counter += 1
         print("Final Scores = Team 1 score = {} and Team 2 score = {}".format(self.team_1_score, self.team_2_score))
 
@@ -113,7 +115,8 @@ class Game(object):
 
 
 if __name__ == '__main__':
-    Game([RuleBasedPlayer(0, 2), Player(1, 3), RuleBasedPlayer(2, 0), Player(3, 1)]).begin_game()
+    #Game([RuleBasedPlayer(0, 2), Player(1, 3), RuleBasedPlayer(2, 0), Player(3, 1)]).begin_game()
+    Game([RuleBasedPlayer(0, 2), RuleBasedPlayer(1, 3), RuleBasedPlayer(2, 0), RuleBasedPlayer(3, 1)]).begin_game()
 
 
 

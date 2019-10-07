@@ -38,22 +38,25 @@ class GAMEMODE(Enum):
     ACE_NARAS = "acenaras"
 
 
-class RankedValue(object):
+class RankedValue:
     def __init__(self, name: str, normal_value: int, naras_value: int, ace_naras_value: int):
         self.name = name
         self.normal_value = normal_value
         self.naras_value = naras_value
         self.ace_naras_value = ace_naras_value
 
-    def get_value(self, g_mode: GAMEMODE):
-        if g_mode == GAMEMODE.NORMAL or g_mode == GAMEMODE.SARAS:
-            return self.normal_value
-        elif g_mode == GAMEMODE.NARAS:
-            return self.naras_value
-        elif g_mode == GAMEMODE.ACE_NARAS:
-            return self.ace_naras_value
-        else:
-            raise NotImplementedError
+    # def get_value(self):
+    #     from dealer.Game import game_mode
+    #     if game_mode is None:
+    #         raise RuntimeError('Game mode is not defined yet')
+    #     if game_mode == GAMEMODE.NORMAL or game_mode == GAMEMODE.SARAS:
+    #         return self.normal_value
+    #     elif game_mode == GAMEMODE.NARAS:
+    #         return self.naras_value
+    #     elif game_mode == GAMEMODE.ACE_NARAS:
+    #         return self.ace_naras_value
+    #     else:
+    #         raise NotImplementedError
 
 
 class VALUES(Enum):
@@ -128,6 +131,7 @@ ACE_NARAS_RANKS = {
 
 def _reverse_mapper(rank_set):
     return {v: k for k, v in rank_set.items()}
+
 
 # REVERSE_SUITS = _reverse_mapper(SUITS)
 REVERSE_ACE_NARAS_RANKS = _reverse_mapper(ACE_NARAS_RANKS)

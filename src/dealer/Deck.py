@@ -1,10 +1,9 @@
-import copy
+import random
 from typing import List, Tuple, Any, Dict
 
 from dealer import Utils
 from dealer.Utils import SUITS, VALUES
 from dealer.Card import Card
-import random
 
 
 def split(a, n):
@@ -12,7 +11,7 @@ def split(a, n):
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
 
-class Hand(object):
+class Hand:
     def __init__(self, player_id: int, cards: List[Card]):
         self.cards_map = {}
         self.init_player_id = player_id
@@ -29,11 +28,11 @@ class Hand(object):
         return result
 
 
-class Deck(object):
+class Deck:
     def __init__(self, cards: List[Card] = None, deck_id: int=0):
         if cards is None:
             cards = []
-        self._cards = list(sorted(cards))
+        self._cards = list(cards)
         self.deck_id = deck_id
 
     def deal(self) -> Tuple[Any, Any, Any, Any, Any]:
@@ -65,7 +64,7 @@ class Deck(object):
         return len(self.cards)
 
     def get_deck_score(self) -> int:
-        number_of_hands = len(self._cards) / 4
+        number_of_hands = len(self._cards) // 4
         score = number_of_hands * 5
         for card in self._cards:
             if card.value == Utils.VALUES.ACE or card.value == Utils.VALUES.TEN:
@@ -98,7 +97,7 @@ class Deck(object):
                 if val == VALUES.JOKER:
                     continue
                 built_cards.append(Card(val, suit))
-        return list(sorted(built_cards))
+        return list(built_cards)
 
     def __add__(self, other):
         if isinstance(other, Deck):
@@ -112,11 +111,11 @@ class Deck(object):
 
     def __iadd__(self, other):
         if isinstance(other, Deck):
-            self._cards = sorted(list(self._cards) + list(other._cards))
+            self._cards = list(self._cards) + list(other._cards)
         elif isinstance(other, list):
-            self._cards = sorted(list(self._cards) + other)
+            self._cards.extend(other)
         elif isinstance(other, Card):
-            self._cards = sorted(list(self._cards) + [other])
+            self._cards.append(other)
         else:
             raise NotImplementedError
         return self
@@ -187,25 +186,26 @@ class Deck(object):
             yield x
 
 
-class SortedCards(object):
-    def __init__(self, cards=None):
+class Hand:
+    def __init__(self, cards: List[Card] = None):
         if cards is None:
             cards = []
-
+        self._count = {}
         self._cards = {}
+        for suit in SUITS:
+            self._cards[suit] = []
+            self._count[suit] = 0
         for card in cards:
-            if card.suit in self._cards:
-                self._cards[card.suit].append(card.value)
-            else:
-                self._cards[card.suit] = [card.value, ]
-        self.self_sort()
+            self._cards[card.suit].append(card)
+            self._count[card.suit] += 1
+        # self.self_sort()
 
     @property
     def num_of_cards(self):
-        count = 0
+        cnt = 0
         for suit in SUITS:
-            count += len(self.my_cards[suit])
-        return count
+            cnt += len(self._cards[suit])
+        return cnt
 
     def self_sort(self):
         for suit in SUITS:
@@ -219,26 +219,89 @@ class SortedCards(object):
 
     def add_card(self, other):
         if isinstance(other, Deck) or isinstance(other, list):
-            for card in Deck:
-                self._cards[card.suit].append(card.value)
+            for card in other:
+                self._cards[card.suit].append(card)
+                self._count[card.suit] += 1
         elif isinstance(other, Card):
-            self._cards[other.suit].append(other.value)
+            self._cards[other.suit].append(other)
+            self._count[other.suit] += 1
         else:
             raise NotImplementedError
-        self.self_sort(self)
+        # self.self_sort(self)
 
     def pop_random_from_suit(self, suit: SUITS = SUITS.NEITHER):
+        #TODO this needs to be reimplemented
         if suit is SUITS.NEITHER:
-            random_card = random.randint(0, self.num_of_cards)
+            random_card = random.randint(0, self.num_of_cards-1)
             for suit in SUITS:
                 try:
-                    return self._cards.pop(random_card)
+                    discarded = self._cards[suit].pop(random_card)
                 except IndexError:
-                    random_card -= len(self.my_cards[suit])
+                    random_card -= self.count(suit)
+                else:
+                    self._count[suit] -= 1
+                    self.check_count()
+                    return discarded
         else:
-            num_of_cards_in_suit = len(self._cards[suit])
+            num_of_cards_in_suit = self.count(suit)
             if num_of_cards_in_suit:
-                return self._cards.pop(random.randint(0, num_of_cards_in_suit))
+                random_idx = random.randint(0, num_of_cards_in_suit-1)
+                discarded = self._cards[suit].pop(random_idx)
+                self._count[suit] -= 1
+                self.check_count()
+                return discarded
             else:
                 return self.pop_random_from_suit()
         raise RuntimeError("can't find a random card")
+
+    @property
+    def cards(self):
+        return self._cards
+
+    def count(self, suit=None):
+        if suit:
+            return self._count[suit]
+        cnt = 0
+        for s in SUITS:
+            cnt += self._count[s]
+        return cnt
+
+    def check_count(self):
+        for suit in SUITS:
+            if self._count[suit] < 0:
+                raise RuntimeError("Ran out of cards in " + suit)
+
+    def __iter__(self):
+        for suit in SUITS:
+            for card in self._cards[suit]:
+                yield card
+
+    # def __next__(self):
+    #     try:
+    #         next_card = self._cards[SUITS(self.suit_idx)][self.card_idx]
+    #     except IndexError:
+    #         self.suit_idx += 1
+    #         self.card_idx = 0
+    #         return self.__next__()
+    #     except KeyError:
+    #         raise StopIteration
+    #     return next_card
+
+    def __str__(self):
+        return str(self._cards)
+
+    @property
+    def most_common(self):
+        """ returns a sorted list from the number of each card in the hand """
+        sorted_list = []
+        for s in SUITS:
+            if self._count[s]:
+                sorted_list.append((s, self._count[s]))
+        sorted_list.sort(key=lambda tup: tup[1])
+        return sorted_list
+
+    def pop_card(self, suit, index=-1):
+        removed = self._cards[suit].pop(index)
+        self._count[suit] -= 1
+        self.check_count()
+        return removed

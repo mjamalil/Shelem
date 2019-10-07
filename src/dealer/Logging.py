@@ -6,7 +6,7 @@ from dealer.Utils import GAMEMODE, SUITS
 from players.Player import Bet
 
 
-class Logging(object):
+class Logging:
     def __init__(self):
         self.hands = []
         self.bet = Bet(0, 0)
@@ -16,7 +16,7 @@ class Logging(object):
         self.saved_hand = Deck()
 
     def add_hand(self, player_id: int, hand: List[Card]):
-        self.hands.append(Hand(player_id, hand))
+        self.hands.append((player_id, Hand(hand)))
 
     def log(self):
         print("Middle Deck:\n{}".format("\t".join(["   [{:14s}]    ".format(str(x)) for x in self.middle_deck.cards])))

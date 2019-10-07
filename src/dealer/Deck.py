@@ -230,7 +230,6 @@ class Hand:
         # self.self_sort(self)
 
     def pop_random_from_suit(self, suit: SUITS = SUITS.NEITHER):
-        #TODO this needs to be reimplemented
         if suit is SUITS.NEITHER:
             random_card = random.randint(0, self.num_of_cards-1)
             for suit in SUITS:

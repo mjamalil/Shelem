@@ -32,7 +32,7 @@ class Game:
         last_bets = []
         while len(betting_players) > 1:
             if initially_passed_count == 3:
-                # Three consecutive pass  the game must re-init
+                # Three consecutive pass the game must re-init
                 self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
                 self.play_a_round()
             bp = betting_players.popleft()
@@ -76,7 +76,12 @@ class Game:
         team2_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
         self.french_deck = self.players[0].saved_deck + self.players[2].saved_deck + \
             self.players[1].saved_deck + self.players[3].saved_deck
+        if len(self.french_deck) < 52:
+            for i in range(4):
+                print(f"cards in player{i}'s hand:{len(self.players[i].saved_deck)}")
+            raise ValueError("Not enough cards in deck to shuffle and deal!")
         final_bet = last_bets[-1]
+        # final_bet.bet_score = 125
         team1_has_bet = final_bet.id == 0 or final_bet.id == 2
         if self.verbose:
             self.logging.log()
@@ -115,8 +120,8 @@ class Game:
 
 
 if __name__ == '__main__':
-    #Game([RuleBasedPlayer(0, 2), Player(1, 3), RuleBasedPlayer(2, 0), Player(3, 1)]).begin_game()
-    Game([RuleBasedPlayer(0, 2), RuleBasedPlayer(1, 3), RuleBasedPlayer(2, 0), RuleBasedPlayer(3, 1)]).begin_game()
+    Game([RuleBasedPlayer(0, 2), Player(1, 3), RuleBasedPlayer(2, 0), Player(3, 1)]).begin_game()
+    #Game([RuleBasedPlayer(0, 2), RuleBasedPlayer(1, 3), RuleBasedPlayer(2, 0), RuleBasedPlayer(3, 1)]).begin_game()
 
 
 

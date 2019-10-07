@@ -55,6 +55,8 @@ class Player:
         self.hokm_suit = hokm_suit
 
     def store_hand(self, hand: List[Card]):
+        if len(hand) is not 4:
+            raise RuntimeError('a round of cards should be 4')
         self.saved_deck += hand
 
     def check_played_card(self, played_card, current_hand, first=False):
@@ -118,7 +120,8 @@ class Player:
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 
         """
-        self.saved_deck += self.my_cards.pop_random_from_suit()
+        for _ in range(4):
+            self.saved_deck += self.my_cards.pop_random_from_suit()
         # decide the suit with maximum number to be the hokm
         best_suit = None
         maximum_num = 0

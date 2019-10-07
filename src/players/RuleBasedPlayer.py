@@ -1,13 +1,9 @@
-import random
 from typing import Tuple, List
-from collections import Counter
 
 from dealer import Deck
 from dealer.Card import Card
 from dealer.Utils import GAMEMODE, SUITS
-from players.Player import Player
-BEST_SUIT = -1
-WORST_SUIT = 0
+from players.Player import Player, WORST_SUIT, BEST_SUIT
 
 
 class RuleBasedPlayer(Player):

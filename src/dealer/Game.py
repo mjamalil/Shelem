@@ -1,11 +1,12 @@
 from typing import Tuple, List
-
 from collections import deque
 
 from dealer.Deck import Deck
 from dealer.Logging import Logging
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
+
+FULL_SCORE = 165
 
 
 class Game:
@@ -28,21 +29,22 @@ class Game:
             self.players[i].begin_game(decks[i])
         betting_players = deque(self.players)
         initially_passed_count = 0
-        betting_rounds = 0
         last_bets = []
+        potential_rematch = True
         while len(betting_players) > 1:
             if initially_passed_count == 3:
                 # Three consecutive pass the game must re-init
                 self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
                 self.play_a_round()
             bp = betting_players.popleft()
-            player_bet = bp.make_bet(last_bets)
-            if len(last_bets) == 0 or (len(last_bets) > 0 and player_bet.bet > last_bets[-1].bet):
+            player_bet = bp.ask2bet(last_bets)
+
+            if player_bet.bet and (len(last_bets) == 0 or player_bet.bet > last_bets[-1].bet):
                 last_bets.append(player_bet)
                 betting_players.append(bp)
-            elif player_bet.bet == 0 and 3 > betting_rounds == initially_passed_count:  # he has passed
+                potential_rematch = False
+            if potential_rematch:
                 initially_passed_count += 1
-                betting_rounds += 1
         hakem = betting_players.popleft()
         last_winner_id = hakem.player_id
         self.logging.log_bet(last_bets[-1])
@@ -78,14 +80,18 @@ class Game:
             self.players[1].saved_deck + self.players[3].saved_deck
         if len(self.french_deck) < 52:
             for i in range(4):
-                print(f"cards in player{i}'s hand:{len(self.players[i].saved_deck)}")
+                print("cards in player{}'s hand:{}".format(
+                    i, len(self.players[i].saved_deck)))
             raise ValueError("Not enough cards in deck to shuffle and deal!")
         final_bet = last_bets[-1]
-        # final_bet.bet_score = 125
         team1_has_bet = final_bet.id == 0 or final_bet.id == 2
         if self.verbose:
             self.logging.log()
-        if (team1_has_bet and team1_score >= final_bet.bet) or (not team1_has_bet and team2_score >= final_bet.bet):
+        if team1_score == FULL_SCORE:
+            return '1', final_bet.bet, 2 * final_bet.bet, team2_score
+        elif team2_score == FULL_SCORE:
+            return '2', final_bet.bet, team2_score, 2 * final_bet.bet
+        elif (team1_has_bet and team1_score >= final_bet.bet) or (not team1_has_bet and team2_score >= final_bet.bet):
             if team1_has_bet:
                 return '1', final_bet.bet, final_bet.bet, team2_score
             else:

@@ -4,6 +4,8 @@ from typing import Tuple, List
 from dealer.Card import Card
 from dealer.Deck import Deck, Hand
 from dealer.Utils import GAMEMODE, SUITS
+BEST_SUIT = -1
+WORST_SUIT = 0
 
 
 class Bet:
@@ -96,24 +98,24 @@ class Player:
             suit = SUITS.NEITHER
         return self.my_cards.pop_random_from_suit(suit)
 
+    def ask2bet(self, previous_last_bets: List[Bet]) -> Bet:
+        return Bet(self.player_id, self.make_bet(previous_last_bets))
+
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
         """
         :return: Pass / 100 < score < 165 / Shelem / Sar-Shelem / Super-Shelem
          Base on a 12-card hand available
-         Sacore should be strictly > previous_last_bet
+         Score should be strictly > previous_last_bet
+
+        basic reading from the number of trump card the player has
+        1   ,  2 ,  3 ,  4 ,  5 ,  6 ,  7 ,  8 ,  9 ,  10,  11,  12
+        pass,pass, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145
+
         """
-        # TODO: Can be improved
-        choice = random.random()
-        if choice < 0.4:
-            return Bet(self.player_id, 0)
-        elif choice < 0.7:
-            return Bet(self.player_id, random.randint(20, 22) * 5)
-        elif choice < 0.9:
-            return Bet(self.player_id, random.randint(23, 25) * 5)
-        elif choice < 0.97:
-            return Bet(self.player_id, random.randint(26, 30) * 5)
-        else:
-            return Bet(self.player_id, random.randint(31, 33) * 5)
+        predict = 5 * (self.my_cards.most_common[BEST_SUIT][1] + 17)
+        if predict < 100:
+            return 0
+        return predict
 
     def discard_cards_decide_hokm(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """

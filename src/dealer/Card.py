@@ -6,8 +6,8 @@ from dealer.Utils import SUITS, GAMEMODE, VALUES
 class Card:
     def __init__(self, value: VALUES, suit: SUITS):
         """
-        :param value: one of the key/vlues in Utils.VALUES 
-        :param suit: one of the key/vlues in Utils.SUITS
+        :param value: one of the key/values in Utils.VALUES
+        :param suit : one of the key/values in Utils.SUITS
         """
         self.suit = suit
         self.value = value
@@ -17,24 +17,25 @@ class Card:
         else:
             self.name = "%s of %s" % (value.value.name.title(), suit.name.title())
 
-    # def __gt__(self, other):
-    #     from dealer.Game import game_mode, hokm_suit
-    #     if isinstance(other, Card):
-    #         if game_mode == GAMEMODE.NORMAL:
-    #             return (self.suit == other.suit and self.ranked_value > other.ranked_value) or \
-    #                    (self.suit != other.suit and self.suit == hokm_suit)
-    #         else:
-    #             return self.suit == other.suit and self.ranked_value > other.ranked_value
-    #     raise RuntimeError('Comparing card with something else')
-    #
-    # def __lt__(self, other):
-    #     if isinstance(other, Card):
-    #         if game_mode == GAMEMODE.NORMAL:
-    #             return (self.suit == other.suit and self.ranked_value < other.ranked_value) or \
-    #                    (self.suit != other.suit and other.suit == hokm_suit)
-    #         else:
-    #             return self.suit == other.suit and self.ranked_value < other.ranked_value
-    #     raise RuntimeError('Comparing card with something else')
+    def __gt__(self, other):
+        from dealer.Utils import GameConfig
+        if isinstance(other, Card):
+            if GameConfig.game_mode == GAMEMODE.NORMAL:
+                return (self.suit == other.suit and self.ranked_value > other.ranked_value) or \
+                       (self.suit != other.suit and self.suit == GameConfig.hokm_suit)
+            else:
+                return self.suit == other.suit and self.ranked_value > other.ranked_value
+        raise RuntimeError('Comparing card with something else')
+
+    def __lt__(self, other):
+        from dealer.Game import new_game
+        if isinstance(other, Card):
+            if new_game.game_mode == GAMEMODE.NORMAL:
+                return (self.suit == other.suit and self.ranked_value < other.ranked_value) or \
+                       (self.suit != other.suit and other.suit == new_game.hokm_suit)
+            else:
+                return self.suit == other.suit and self.ranked_value < other.ranked_value
+        raise RuntimeError('Comparing card with something else')
 
     def __hash__(self):
         return hash((self.value, self.suit))
@@ -45,7 +46,22 @@ class Card:
     def __str__(self):
         return self.name
 
-    def ranked_value(self, game_mode):
+    @property
+    def ranked_value(self):
+        from dealer.Utils import GameConfig
+        game_mode = GameConfig.game_mode
+        if game_mode is None:
+            raise RuntimeError('Game mode is not defined yet')
+        if game_mode == GAMEMODE.NORMAL or game_mode == GAMEMODE.SARAS:
+            return self.value.value.normal_value
+        elif game_mode == GAMEMODE.NARAS:
+            return self.value.value.naras_value
+        elif game_mode == GAMEMODE.ACE_NARAS:
+            return self.value.value.ace_naras_value
+        else:
+            raise NotImplementedError
+
+    def ranked_value2(self, game_mode):
         if game_mode is None:
             raise RuntimeError('Game mode is not defined yet')
         if game_mode == GAMEMODE.NORMAL or game_mode == GAMEMODE.SARAS:

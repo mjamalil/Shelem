@@ -3,6 +3,7 @@ from collections import deque
 
 from dealer.Deck import Deck
 from dealer.Logging import Logging
+from dealer.Utils import GameConfig
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
 
@@ -49,6 +50,7 @@ class Game:
         last_winner_id = hakem.player_id
         self.logging.log_bet(last_bets[-1])
         game_mode, hokm_suit = hakem.make_hakem(middle_deck)
+        GameConfig.game_mode, GameConfig.hokm_suit = game_mode, hokm_suit
         self.logging.log_hakem_saved_hand(Deck(hakem.saved_deck))
         self.logging.log_hokm(game_mode, hokm_suit)
         for i in range(4):
@@ -67,7 +69,8 @@ class Game:
                 played_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
                 self.players[next_player_id].check_played_card(played_card, current_hand)
                 current_hand.append(played_card)
-                if played_card.is_greater(winner_card, game_mode, hokm_suit):
+                # if played_card.is_greater(winner_card, game_mode, hokm_suit):
+                if played_card > winner_card:
                     last_winner_id = next_player_id
                     winner_card = played_card
             hands_played.append(current_hand)
@@ -77,7 +80,7 @@ class Game:
         team1_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         team2_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
         self.french_deck = self.players[0].saved_deck + self.players[2].saved_deck + \
-            self.players[1].saved_deck + self.players[3].saved_deck
+                           self.players[1].saved_deck + self.players[3].saved_deck
         if len(self.french_deck) < 52:
             for i in range(4):
                 print("cards in player{}'s hand:{}".format(
@@ -126,11 +129,6 @@ class Game:
 
 
 if __name__ == '__main__':
-    Game([RuleBasedPlayer(0, 2), Player(1, 3), RuleBasedPlayer(2, 0), Player(3, 1)]).begin_game()
-    #Game([RuleBasedPlayer(0, 2), RuleBasedPlayer(1, 3), RuleBasedPlayer(2, 0), RuleBasedPlayer(3, 1)]).begin_game()
-
-
-
-
-
-
+    new_game = Game([RuleBasedPlayer(0, 2), Player(1, 3), RuleBasedPlayer(2, 0), Player(3, 1)])
+    new_game.begin_game()
+# Game([RuleBasedPlayer(0, 2), RuleBasedPlayer(1, 3), RuleBasedPlayer(2, 0), RuleBasedPlayer(3, 1)]).begin_game()

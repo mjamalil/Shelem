@@ -138,3 +138,8 @@ REVERSE_ACE_NARAS_RANKS = _reverse_mapper(ACE_NARAS_RANKS)
 REVERSE_NARAS_RANKS = _reverse_mapper(NARAS_RANKS)
 REVERSE_NORMAL_RANKS = _reverse_mapper(NORMAL_RANKS)
 REVERSE_SARAS_RANKS = _reverse_mapper(NARAS_RANKS)
+
+
+class GameConfig:
+    game_mode = None
+    hokm_suit = None

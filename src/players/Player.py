@@ -108,7 +108,7 @@ class Player:
          Score should be strictly > previous_last_bet
 
         basic reading from the number of trump card the player has
-        1   ,  2 ,  3 ,  4 ,  5 ,  6 ,  7 ,  8 ,  9 ,  10,  11,  12
+          1 ,  2 ,  3 ,  4 ,  5 ,  6 ,  7 ,  8 ,  9 ,  10,  11,  12
         pass,pass, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145
 
         """

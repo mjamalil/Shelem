@@ -37,9 +37,14 @@ class RuleBasedPlayer(Player):
         # if I'm not the first player
         # if current_hand:
         #     suit = current_hand[0].suit
-        # # if I'm the first player and hakem
+        # if I'm the first player and hakem
         # elif not hands_played and not current_hand:
         #     suit = self.hokm_suit
         # else:
         #     suit = SUITS.NEITHER
-        return super().play_a_card(hands_played, current_hand)
+        if current_hand:
+            return super().play_a_card(hands_played, current_hand)
+        if self.is_hakem:
+            return super().play_a_card(hands_played, current_hand)
+        else:
+            return super().play_a_card(hands_played, current_hand)

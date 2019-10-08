@@ -11,23 +11,6 @@ def split(a, n):
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
 
-class Hand:
-    def __init__(self, player_id: int, cards: List[Card]):
-        self.cards_map = {}
-        self.init_player_id = player_id
-        for ind, card in enumerate(cards):
-            self.cards_map[(player_id + ind) % 4] = card
-
-    def __str__(self):
-        result = ""
-        for i in range(4):
-            if i == self.init_player_id:
-                result += "**[{:14s}]**\t\t".format(str(self.cards_map[i]))
-            else:
-                result += "  [{:14s}]  \t\t".format(str(self.cards_map[i]))
-        return result
-
-
 class Deck:
     def __init__(self, cards: List[Card] = None, deck_id: int=0):
         if cards is None:

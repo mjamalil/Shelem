@@ -28,11 +28,11 @@ class Card:
         raise RuntimeError('Comparing card with something else')
 
     def __lt__(self, other):
-        from dealer.Game import new_game
+        from dealer.Utils import GameConfig
         if isinstance(other, Card):
-            if new_game.game_mode == GAMEMODE.NORMAL:
+            if GameConfig.game_mode == GAMEMODE.NORMAL:
                 return (self.suit == other.suit and self.ranked_value < other.ranked_value) or \
-                       (self.suit != other.suit and other.suit == new_game.hokm_suit)
+                       (self.suit != other.suit and other.suit == GameConfig.hokm_suit)
             else:
                 return self.suit == other.suit and self.ranked_value < other.ranked_value
         raise RuntimeError('Comparing card with something else')

@@ -56,6 +56,9 @@ class Player:
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
 
+    def sort_cards(self):
+        self.my_cards.self_sort()
+
     def store_hand(self, hand: List[Card]):
         if len(hand) is not 4:
             raise RuntimeError('a round of cards should be 4')

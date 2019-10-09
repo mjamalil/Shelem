@@ -49,12 +49,12 @@ class Game:
         hakem = betting_players.popleft()
         last_winner_id = hakem.player_id
         self.logging.log_bet(last_bets[-1])
-        game_mode, hokm_suit = hakem.make_hakem(middle_deck)
-        GameConfig.game_mode, GameConfig.hokm_suit = game_mode, hokm_suit
+        GameConfig.game_mode, GameConfig.hokm_suit = hakem.make_hakem(middle_deck)
         self.logging.log_hakem_saved_hand(Deck(hakem.saved_deck))
-        self.logging.log_hokm(game_mode, hokm_suit)
+        self.logging.log_hokm(GameConfig.game_mode, GameConfig.hokm_suit)
         for i in range(4):
-            self.players[i].set_hokm_and_game_mode(game_mode, hokm_suit)
+            self.players[i].set_hokm_and_game_mode(GameConfig.game_mode, GameConfig.hokm_suit)
+            self.players[i].sort_cards()
         hands_played = []
         for i in range(12):
             first_player = last_winner_id

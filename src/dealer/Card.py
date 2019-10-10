@@ -1,6 +1,5 @@
 from unicards import unicard
-
-from dealer.Utils import SUITS, GAMEMODE, VALUES
+from dealer.Utils import SUITS, GAMEMODE, VALUES, GameConfig
 
 
 class Card:
@@ -18,7 +17,6 @@ class Card:
             self.name = "%s of %s" % (value.value.name.title(), suit.name.title())
 
     def __gt__(self, other):
-        from dealer.Utils import GameConfig
         if isinstance(other, Card):
             if GameConfig.game_mode == GAMEMODE.NORMAL:
                 return (self.suit == other.suit and self.ranked_value > other.ranked_value) or \
@@ -28,13 +26,17 @@ class Card:
         raise RuntimeError('Comparing card with something else')
 
     def __lt__(self, other):
-        from dealer.Utils import GameConfig
         if isinstance(other, Card):
             if GameConfig.game_mode == GAMEMODE.NORMAL:
                 return (self.suit == other.suit and self.ranked_value < other.ranked_value) or \
                        (self.suit != other.suit and other.suit == GameConfig.hokm_suit)
             else:
                 return self.suit == other.suit and self.ranked_value < other.ranked_value
+        raise RuntimeError('Comparing card with something else')
+
+    def __sub__(self, other):
+        if isinstance(other, Card):
+            return self.ranked_value - other.ranked_value
         raise RuntimeError('Comparing card with something else')
 
     def __hash__(self):

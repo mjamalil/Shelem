@@ -86,19 +86,22 @@ class Player:
         game_mode, hokm_suit = self.discard_cards_decide_hokm()
         return game_mode, hokm_suit
 
-    def play_a_card(self, hands_played: List[List[Card]], current_hand: List[Card]) -> Card:
-        """
-        :return: pops and plays the best available card in the current hand  
-        """
-        # TODO: Can be improved
+    def determine_suit(self, hands_played: List[List[Card]], current_hand: List[Card]) -> SUITS:
         # if I'm not the first player
+        suit = SUITS.NEITHER
         if current_hand:
             suit = current_hand[0].suit
         # if I'm the first player and hakem
         elif not hands_played and not current_hand:
             suit = self.hokm_suit
-        else:
-            suit = SUITS.NEITHER
+        return suit
+
+    def play_a_card(self, hands_played: List[List[Card]], current_hand: List[Card]) -> Card:
+        """
+        :return: pops and plays the best available card in the current hand  
+        """
+        # TODO: Can be improved
+        suit = self.determine_suit(hands_played, current_hand)
         return self.my_cards.pop_random_from_suit(suit)
 
     def ask2bet(self, previous_last_bets: List[Bet]) -> Bet:

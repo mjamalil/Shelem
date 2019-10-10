@@ -193,7 +193,7 @@ class Hand:
     def self_sort(self):
         for suit in SUITS:
             if suit in self._cards:
-                self._cards[suit] = sorted(self._cards[suit])
+                self._cards[suit].sort()
             else:
                 self._cards[suit] = []
 
@@ -283,6 +283,12 @@ class Hand:
         return sorted_list
 
     def pop_card(self, suit, index=-1):
+        """
+        :param suit: suit to pop the card from:
+        :param index: -1 is the last card and 0 is the first card
+                if sorted -1 is the best card, and 0 is the worst card
+        :return: the card
+        """
         removed = self._cards[suit].pop(index)
         self._count[suit] -= 1
         self.check_count()

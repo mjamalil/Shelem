@@ -3,7 +3,7 @@ from collections import deque
 
 from dealer.Deck import Deck
 from dealer.Logging import Logging
-from dealer.Utils import GameConfig
+from dealer.Utils import GameConfig, SUITS
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
 
@@ -19,6 +19,23 @@ class Game:
         self.team_2_score = 0
         self.verbose = verbose
         self.logging = Logging()
+        self.remained_cards = {suit: [] for suit in SUITS}
+
+    def build_remaining_cards(self):
+        for card in self.french_deck:
+            self.remained_cards[card.suit].append(card)
+        for suit in SUITS:
+            self.remained_cards[suit].sort()
+
+    def remove_card(self, played_card):
+        found_card = None
+        for card in self.remained_cards[played_card.suit]:
+            if card.ranked_value == played_card.ranked_value:
+                found_card = card
+                break
+        if not found_card:
+            raise ValueError()
+        self.remained_cards[played_card.suit].remove(card)
 
     def play_a_round(self) -> Tuple[int, int]:
         d1, d2, d3, middle_deck, d4 = self.french_deck.deal()
@@ -55,27 +72,34 @@ class Game:
         for i in range(4):
             self.players[i].set_hokm_and_game_mode(GameConfig.game_mode, GameConfig.hokm_suit)
             self.players[i].sort_cards()
+
+        self.build_remaining_cards()
         hands_played = []
-        for i in range(12):
-            first_player = last_winner_id
-            next_player_id = last_winner_id
-            current_hand = []
-            winner_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
-            self.players[next_player_id].check_played_card(winner_card, current_hand, i == 0)
-            current_hand.append(winner_card)
-            # players playing a card
-            for _ in range(3):
-                next_player_id = (next_player_id + 1) % 4
-                played_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
-                self.players[next_player_id].check_played_card(played_card, current_hand)
-                current_hand.append(played_card)
-                # if played_card.is_greater(winner_card, game_mode, hokm_suit):
-                if played_card > winner_card:
-                    last_winner_id = next_player_id
-                    winner_card = played_card
-            hands_played.append(current_hand)
-            self.logging.add_hand(first_player, current_hand)
-            self.players[last_winner_id].store_hand(current_hand)
+        try:
+            for i in range(12):
+                first_player = last_winner_id
+                next_player_id = last_winner_id
+                current_hand = []
+                winner_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
+                self.remove_card(winner_card)
+                self.players[next_player_id].check_played_card(winner_card, current_hand, i == 0)
+                current_hand.append(winner_card)
+                # players playing a card
+                for _ in range(3):
+                    next_player_id = (next_player_id + 1) % 4
+                    played_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
+                    self.remove_card(played_card)
+                    self.players[next_player_id].check_played_card(played_card, current_hand)
+                    current_hand.append(played_card)
+                    # if played_card.is_greater(winner_card, game_mode, hokm_suit):
+                    if played_card > winner_card:
+                        last_winner_id = next_player_id
+                        winner_card = played_card
+                hands_played.append(current_hand)
+                self.logging.add_hand(first_player, current_hand)
+                self.players[last_winner_id].store_hand(current_hand)
+        except ValueError:
+            raise AssertionError('An invalid card is played')
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
         team1_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         team2_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()

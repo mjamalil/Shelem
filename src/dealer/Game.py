@@ -19,23 +19,10 @@ class Game:
         self.team_2_score = 0
         self.verbose = verbose
         self.logging = Logging()
-        self.remained_cards = {suit: [] for suit in SUITS}
-
-    def build_remaining_cards(self):
-        for card in self.french_deck:
-            self.remained_cards[card.suit].append(card)
-        for suit in SUITS:
-            self.remained_cards[suit].sort()
 
     def remove_card(self, played_card):
-        found_card = None
-        for card in self.remained_cards[played_card.suit]:
-            if card.ranked_value == played_card.ranked_value:
-                found_card = card
-                break
-        if not found_card:
-            raise ValueError()
-        self.remained_cards[played_card.suit].remove(card)
+        for i in range(4):
+            self.players[i].remove_card(played_card)
 
     def play_a_round(self) -> Tuple[int, int]:
         d1, d2, d3, middle_deck, d4 = self.french_deck.deal()
@@ -71,9 +58,11 @@ class Game:
         self.logging.log_hokm(GameConfig.game_mode, GameConfig.hokm_suit)
         for i in range(4):
             self.players[i].set_hokm_and_game_mode(GameConfig.game_mode, GameConfig.hokm_suit)
+            # It's important for these function to ba after setting hokm and game mode
             self.players[i].sort_cards()
+            # this should be executed after make_hakem
+            self.players[i].build_remaining_cards(self.french_deck)
 
-        self.build_remaining_cards()
         hands_played = []
         try:
             for i in range(12):

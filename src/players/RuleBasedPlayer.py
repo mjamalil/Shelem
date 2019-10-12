@@ -2,7 +2,7 @@ from typing import Tuple, List
 
 from dealer import Deck
 from dealer.Card import Card
-from dealer.Utils import GAMEMODE, SUITS, VALUES
+from dealer.Utils import GAMEMODE, SUITS
 from players.Player import Player, WORST_SUIT, BEST_SUIT
 
 
@@ -19,15 +19,14 @@ class RuleBasedPlayer(Player):
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         """
         # gets the best suit
+        discards = []
         hokm_suit = self.my_cards.most_common[BEST_SUIT][0]
         for _ in range(4):
             worst_suit = self.my_cards.most_common[WORST_SUIT][0]
-            discarded = self.my_cards.pop_card(worst_suit)
-            self.saved_deck += discarded
-        return GAMEMODE.NORMAL, hokm_suit
+            discards.append(self.my_cards.pop_card(worst_suit))
+        return GAMEMODE.NORMAL, hokm_suit, discards
 
-    def play_a_card(self, hands_played: List[List[Card]], current_hand: List[Card]) -> Card:
-        suit = self.determine_suit(hands_played, current_hand)
+    def play_a_card_from_suit(self, hands_played: List[List[Card]], current_hand: List[Card], suit: SUITS) -> Card:
         if current_hand:
             return super().play_a_card(hands_played, current_hand)
         # I'm the first player
@@ -40,7 +39,5 @@ class RuleBasedPlayer(Player):
                     suit = self.hokm_suit
                 else:
                     suit = self.hokm_suit
-
-
         else:
             return super().play_a_card(hands_played, current_hand)

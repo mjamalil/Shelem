@@ -30,11 +30,13 @@ class Player:
         # self.my_cards = Hand()
         self.my_cards = None
         self.saved_deck = Deck()
+        self.hakem_discards = None
         self.is_hakem = False
         self.game_mode = GAMEMODE.NORMAL
         self.hokm_suit = SUITS.NEITHER
         self.player_id = player_id
         self.team_mate_player_id = team_mate_player_id
+        self.remained_cards = {suit: [] for suit in SUITS}
 
     def __repr__(self):
         output = ''
@@ -51,6 +53,7 @@ class Player:
     def begin_game(self, deck: Deck):
         self.my_cards = Hand(deck.cards)
         self.saved_deck = Deck()
+        self.hakem_discards = []
 
     def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS):
         self.game_mode = game_mode
@@ -83,7 +86,9 @@ class Player:
             raise ValueError("Game has not started yet")
         self.is_hakem = True
         self.my_cards.add_card(middle_hand)
-        game_mode, hokm_suit = self.discard_cards_decide_hokm()
+        game_mode, hokm_suit, discards = self.discard_cards_decide_hokm()
+        self.hakem_discards += discards
+        self.saved_deck += discards
         return game_mode, hokm_suit
 
     def determine_suit(self, hands_played: List[List[Card]], current_hand: List[Card]) -> SUITS:
@@ -100,8 +105,11 @@ class Player:
         """
         :return: pops and plays the best available card in the current hand  
         """
-        # TODO: Can be improved
         suit = self.determine_suit(hands_played, current_hand)
+        return self.play_a_card_from_suit(hands_played, current_hand, suit)
+
+    def play_a_card_from_suit(self, hands_played: List[List[Card]], current_hand: List[Card], suit: SUITS) -> Card:
+        # TODO: Can be improved
         return self.my_cards.pop_random_from_suit(suit)
 
     def ask2bet(self, previous_last_bets: List[Bet]) -> Bet:
@@ -124,12 +132,9 @@ class Player:
         return predict
 
     def discard_cards_decide_hokm(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
-        """
-        if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
-        :return: 
-        """
+        discards = []
         for _ in range(4):
-            self.saved_deck += self.my_cards.pop_random_from_suit()
+            discards.append(self.my_cards.pop_random_from_suit())
         # decide the suit with maximum number to be the hokm
         best_suit = None
         maximum_num = 0
@@ -138,4 +143,34 @@ class Player:
                 maximum_num = len(self.my_cards[suit])
                 best_suit = suit
 
-        return GAMEMODE.NORMAL, best_suit
+        return GAMEMODE.NORMAL, best_suit, discards
+
+    def build_remaining_cards(self, complete_deck):
+        """
+        build the list of remained cards to keep track of what card is in play
+        """
+        for card in complete_deck:
+            self.remained_cards[card.suit].append(card)
+        for suit in SUITS:
+            self.remained_cards[suit].sort()
+        if self.is_hakem:
+            for card in self.hakem_discards:
+                self.remove_card(card)
+
+
+            
+
+    def remove_card(self, played_card):
+        """
+        remove the played card from the list of remained card to keep track of what card is in play
+        :param played_card: the card that has been played
+        :return:
+        """
+        found_card = None
+        for card in self.remained_cards[played_card.suit]:
+            if card.ranked_value == played_card.ranked_value:
+                found_card = card
+                break
+        if not found_card:
+            raise ValueError()
+        self.remained_cards[played_card.suit].remove(card)

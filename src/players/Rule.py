@@ -1,6 +1,7 @@
 class RuleException(Exception):
     pass
 
+
 def max_at_the_moment(**kwargs):
     remained_cards = kwargs['remained_cards']
     suit = kwargs['follow_suit']
@@ -17,16 +18,50 @@ def return_max_in_suit(**kwargs):
     raise RuleException(f'no cards remained in this suit[{suit}]')
 
 
+def return_min_in_suit(**kwargs):
+    my_cards = kwargs['my_cards']
+    suit = kwargs['follow_suit']
+    if my_cards[suit]:
+        return suit, -1
+    raise RuleException(f'no cards remained in this suit[{suit}]')
+
+
 class Rule:
     rules = [
-        {'name': 'first',
-         'condition': {
-            'turn': 2,
-            'have_suit': True,
-            'max_card': max_at_the_moment
+        {
+            'name': '2nd_player',
+            'condition': {
+                'turn': 2,
+                'have_suit': True,
+                'max_card': max_at_the_moment
             },
-         'action': return_max_in_suit
-         },
+            'action': return_max_in_suit
+        },
+        {
+            'name': '3rd_player',
+            'condition': {
+                'turn': 3,
+                'have_suit': True,
+                'max_card': max_at_the_moment
+            },
+            'action': return_max_in_suit
+        },
+        {
+            'name': '4th_player',
+            'condition': {
+                'turn': 4,
+                'have_suit': True,
+                'max_card': max_at_the_moment
+            },
+            'action': return_max_in_suit
+        },
+        {
+            'name': 'default',
+            'condition': {
+                'have_suit': True,
+            },
+            'action': return_min_in_suit
+        },
 
     ]
     @staticmethod
@@ -55,4 +90,3 @@ class Rule:
             else:
                 return cls.get_the_value(rule['action'], **kwargs)
         return None
-

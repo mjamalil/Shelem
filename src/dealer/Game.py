@@ -4,11 +4,13 @@ from collections import deque
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
-from dealer.Utils import GameConfig, SUITS
+from dealer.Utils import GameConfig
+from players.Performance import Performance
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
 
 FULL_SCORE = 165
+ENDGAME_SCORE = 2165
 
 
 class Game:
@@ -20,6 +22,7 @@ class Game:
         self.team_2_score = 0
         self.verbose = verbose
         self.logging = Logging()
+        self.performance = Performance()
 
     def remove_card(self, played_card):
         if isinstance(played_card, Card):
@@ -115,22 +118,30 @@ class Game:
         if self.verbose:
             self.logging.log()
         if team1_score == FULL_SCORE:
+            self.performance.increase('hakem_shelem')
             return '1', final_bet.bet, 2 * final_bet.bet, team2_score
         elif team2_score == FULL_SCORE:
+            self.performance.increase('not_hakem_shelem')
             return '2', final_bet.bet, team2_score, 2 * final_bet.bet
         elif (team1_has_bet and team1_score >= final_bet.bet) or (not team1_has_bet and team2_score >= final_bet.bet):
             if team1_has_bet:
+                self.performance.increase('hakem_success')
                 return '1', final_bet.bet, final_bet.bet, team2_score
             else:
+                self.performance.increase('not_hakem_fail')
                 return '2', final_bet.bet, team1_score, final_bet.bet
         elif (team1_has_bet and team2_score < 85) or (not team1_has_bet and team1_score < 85):
             if team1_has_bet:
+                self.performance.increase('hakem_fail')
                 return '1', final_bet.bet, -final_bet.bet, team2_score
             else:
+                self.performance.increase('not_hakem_success')
                 return '2', final_bet.bet, team1_score, -final_bet.bet
         elif team1_has_bet:
+            self.performance.increase('hakem_double')
             return '1', final_bet.bet, -2 * final_bet.bet, team2_score
         else:
+            self.performance.increase('not_hakem_double')
             return '2', final_bet.bet, team1_score, -2 * final_bet.bet
 
     def begin_game(self):
@@ -143,11 +154,12 @@ class Game:
                 str(round_counter).rjust(3, ' '), team, bet, str(score1).rjust(4, ' '), str(score2).rjust(4, ' ')))
             round_counter += 1
         print("Final Scores = Team 1 score = {} and Team 2 score = {}".format(self.team_1_score, self.team_2_score))
+        print(self.performance)
 
     def check_game_finished(self):
-        if self.team_1_score >= 1165 or self.team_1_score - self.team_2_score >= 1165:
+        if self.team_1_score >= ENDGAME_SCORE or self.team_1_score - self.team_2_score >= ENDGAME_SCORE:
             return True
-        elif self.team_2_score >= 1165 or self.team_2_score - self.team_1_score >= 1165:
+        elif self.team_2_score >= ENDGAME_SCORE or self.team_2_score - self.team_1_score >= ENDGAME_SCORE:
             return True
         return False
 

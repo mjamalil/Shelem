@@ -42,17 +42,3 @@ class RuleBasedPlayer(Player):
         if action:
             return self.my_cards.pop_card(action[0], action[1])
         return super().play_a_card_from_suit(hands_played, current_hand, suit)
-        if current_hand:
-            return super().play_a_card(hands_played, current_hand)
-        # I'm the first player
-        if self.is_hakem:
-            return super().play_a_card(hands_played, current_hand)
-            if suit == SUITS.NEITHER:
-                # decide the best suit to play
-                if self.my_cards.count(self.hokm_suit) < 3:
-                    # play anything but hokm
-                    suit = self.hokm_suit
-                else:
-                    suit = self.hokm_suit
-        else:
-            return super().play_a_card(hands_played, current_hand)

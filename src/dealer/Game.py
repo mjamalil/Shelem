@@ -1,6 +1,7 @@
 from typing import Tuple, List
 from collections import deque
 
+from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
 from dealer.Utils import GameConfig, SUITS
@@ -21,8 +22,17 @@ class Game:
         self.logging = Logging()
 
     def remove_card(self, played_card):
-        for i in range(4):
-            self.players[i].remove_card(played_card)
+        if isinstance(played_card, Card):
+            played_card = [Card]
+        for card in played_card:
+            for i in range(4):
+                self.players[i].remove_card(card)
+
+    @staticmethod
+    def check_that_all_cards_have_been_played(cards):
+        for suit in cards:
+            if cards[suit]:
+                raise RuntimeError('some cards have not been played')
 
     def play_a_round(self) -> Tuple[int, int]:
         d1, d2, d3, middle_deck, d4 = self.french_deck.deal()
@@ -70,25 +80,26 @@ class Game:
                 next_player_id = last_winner_id
                 current_hand = []
                 winner_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
-                self.remove_card(winner_card)
                 self.players[next_player_id].check_played_card(winner_card, current_hand, i == 0)
                 current_hand.append(winner_card)
                 # players playing a card
                 for _ in range(3):
                     next_player_id = (next_player_id + 1) % 4
                     played_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
-                    self.remove_card(played_card)
                     self.players[next_player_id].check_played_card(played_card, current_hand)
                     current_hand.append(played_card)
                     # if played_card.is_greater(winner_card, game_mode, hokm_suit):
                     if played_card > winner_card:
                         last_winner_id = next_player_id
                         winner_card = played_card
+                self.remove_card(current_hand)
                 hands_played.append(current_hand)
                 self.logging.add_hand(first_player, current_hand)
                 self.players[last_winner_id].store_hand(current_hand)
         except ValueError:
             raise AssertionError('An invalid card is played')
+        self.check_that_all_cards_have_been_played(hakem.remained_cards)
+
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
         team1_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         team2_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()

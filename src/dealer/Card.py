@@ -34,6 +34,13 @@ class Card:
                 return self.suit == other.suit and self.ranked_value < other.ranked_value
         raise RuntimeError('Comparing card with something else')
 
+    def __eq__(self, other):
+        if other is None:
+            return False
+        if isinstance(other, Card):
+            return self.ranked_value == other.ranked_value
+        raise RuntimeError('Comparing card with something else')
+
     def __sub__(self, other):
         if isinstance(other, Card):
             return self.ranked_value - other.ranked_value
@@ -52,18 +59,6 @@ class Card:
     def ranked_value(self):
         from dealer.Utils import GameConfig
         game_mode = GameConfig.game_mode
-        if game_mode is None:
-            raise RuntimeError('Game mode is not defined yet')
-        if game_mode == GAMEMODE.NORMAL or game_mode == GAMEMODE.SARAS:
-            return self.value.value.normal_value
-        elif game_mode == GAMEMODE.NARAS:
-            return self.value.value.naras_value
-        elif game_mode == GAMEMODE.ACE_NARAS:
-            return self.value.value.ace_naras_value
-        else:
-            raise NotImplementedError
-
-    def ranked_value2(self, game_mode):
         if game_mode is None:
             raise RuntimeError('Game mode is not defined yet')
         if game_mode == GAMEMODE.NORMAL or game_mode == GAMEMODE.SARAS:

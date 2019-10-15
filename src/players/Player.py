@@ -54,6 +54,8 @@ class Player:
         self.my_cards = Hand(deck.cards)
         self.saved_deck = Deck()
         self.hakem_discards = []
+        for suit in SUITS:
+            self.remained_cards[suit].clear()
 
     def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS):
         self.game_mode = game_mode
@@ -157,9 +159,6 @@ class Player:
             for card in self.hakem_discards:
                 self.remove_card(card)
 
-
-            
-
     def remove_card(self, played_card):
         """
         remove the played card from the list of remained card to keep track of what card is in play
@@ -168,7 +167,7 @@ class Player:
         """
         found_card = None
         for card in self.remained_cards[played_card.suit]:
-            if card.ranked_value == played_card.ranked_value:
+            if card == played_card:
                 found_card = card
                 break
         if not found_card:

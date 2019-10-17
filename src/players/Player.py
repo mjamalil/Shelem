@@ -37,6 +37,7 @@ class Player:
         self.player_id = player_id
         self.team_mate_player_id = team_mate_player_id
         self.remained_cards = {suit: [] for suit in SUITS}
+        self.num_random_play = 0
 
     def __repr__(self):
         output = ''
@@ -111,7 +112,7 @@ class Player:
         return self.play_a_card_from_suit(hands_played, current_hand, suit)
 
     def play_a_card_from_suit(self, hands_played: List[List[Card]], current_hand: List[Card], suit: SUITS) -> Card:
-        # TODO: Can be improved
+        self.num_random_play += 1
         return self.my_cards.pop_random_from_suit(suit)
 
     def ask2bet(self, previous_last_bets: List[Bet]) -> Bet:

@@ -27,18 +27,21 @@ class RuleBasedPlayer(Player):
             discards.append(self.my_cards.pop_card(worst_suit))
         return GAMEMODE.NORMAL, hokm_suit, discards
 
-    @staticmethod
-    def turn(hand):
-        return len(hand) + 1
-
     def play_a_card_from_suit(self, hands_played: List[List[Card]], current_hand: List[Card], suit: SUITS) -> Card:
         have_suit = len(self.my_cards[suit]) > 0
         max_card = None
         if have_suit:
             max_card = max(self.my_cards[suit])
-        action = Rule.apply_knowledge(
-            my_cards=self.my_cards, remained_cards=self.remained_cards, follow_suit=suit,
-            turn=self.turn(current_hand), have_suit=have_suit, max_card=max_card)
+        kwargs = {
+            'my_cards': self.my_cards,
+            'remained_cards': self.remained_cards,
+            'current_hand': current_hand,
+            'follow_suit': suit,
+            'turn': len(current_hand) + 1,
+            'have_suit': have_suit,
+            'max_card': max_card
+        }
+        action = Rule.apply_knowledge(**kwargs)
         if action:
             return self.my_cards.pop_card(action[0], action[1])
         return super().play_a_card_from_suit(hands_played, current_hand, suit)

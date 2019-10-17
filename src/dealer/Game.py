@@ -155,6 +155,8 @@ class Game:
             round_counter += 1
         print("Final Scores = Team 1 score = {} and Team 2 score = {}".format(self.team_1_score, self.team_2_score))
         print(self.performance)
+        team1_random_play = self.players[0].num_random_play + self.players[2].num_random_play
+        print(f'Number of random play in team1:{team1_random_play}')
 
     def check_game_finished(self):
         if self.team_1_score >= ENDGAME_SCORE or self.team_1_score - self.team_2_score >= ENDGAME_SCORE:

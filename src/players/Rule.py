@@ -1,3 +1,7 @@
+from dealer.Utils import SUITS
+from players.Player import BEST_SUIT
+
+
 class RuleException(Exception):
     pass
 
@@ -26,10 +30,31 @@ def return_min_in_suit(**kwargs):
     raise RuleException(f'no cards remained in this suit[{suit}]')
 
 
+def return_min_in_any_suit(**kwargs):
+    my_cards = kwargs['my_cards']
+    suit = kwargs['follow_suit']
+    if suit == SUITS.NEITHER:
+        return None
+    suit = my_cards.most_common[BEST_SUIT][0]
+    return suit, 0
+
+
+def return_best_if_adds_value(**kwargs):
+    """
+    assuming we have the suit
+    """
+    my_cards = kwargs['my_cards']
+    suit = kwargs['follow_suit']
+    current_hand = kwargs['current_hand']
+    if max(my_cards[suit]) > max(current_hand):
+        return suit, -1
+    return suit, 0
+
+
 class Rule:
     rules = [
         {
-            'name': '2nd_player',
+            'description': '2nd_player',
             'condition': {
                 'turn': 2,
                 'have_suit': True,
@@ -38,7 +63,7 @@ class Rule:
             'action': return_max_in_suit
         },
         {
-            'name': '3rd_player',
+            'description': '3rd_player',
             'condition': {
                 'turn': 3,
                 'have_suit': True,
@@ -47,7 +72,15 @@ class Rule:
             'action': return_max_in_suit
         },
         {
-            'name': '4th_player',
+            'description': '3rd_player should play his max',
+            'condition': {
+                'turn': 3,
+                'have_suit': True,
+            },
+            'action': return_best_if_adds_value
+        },
+        {
+            'description': '4th_player',
             'condition': {
                 'turn': 4,
                 'have_suit': True,
@@ -56,13 +89,19 @@ class Rule:
             'action': return_max_in_suit
         },
         {
-            'name': 'default',
+            'description': 'return min if no option',
             'condition': {
                 'have_suit': True,
             },
             'action': return_min_in_suit
         },
-
+        {
+            'description': 'default',
+            'condition': {
+                'have_suit': False,
+            },
+            'action': return_min_in_any_suit
+        },
     ]
     @staticmethod
     def get_the_value(value, **kwargs):

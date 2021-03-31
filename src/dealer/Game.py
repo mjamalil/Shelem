@@ -7,8 +7,10 @@ from dealer.Logging import Logging
 from players.Player import Player
 
 
-class Game(object):
+class Game:
+
     def __init__(self, players: List[Player], verbose: bool = False):
+        self.game_end = 11650
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0
@@ -102,9 +104,9 @@ class Game(object):
         print("Final Scores = Team 1 score = {} and Team 2 score = {}".format(self.team_1_score, self.team_2_score))
 
     def check_game_finished(self):
-        if self.team_1_score >= 1165 or self.team_1_score - self.team_2_score >= 1165:
+        if self.team_1_score >= self.game_end or self.team_1_score - self.team_2_score >= self.game_end:
             return True
-        elif self.team_2_score >= 1165 or self.team_2_score - self.team_1_score >= 1165:
+        elif self.team_2_score >= self.game_end or self.team_2_score - self.team_1_score >= self.game_end:
             return True
         return False
 

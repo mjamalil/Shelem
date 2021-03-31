@@ -2,7 +2,7 @@ from unicards import unicard
 from dealer.Utils import SUITS, GAMEMODE, VALUES
 
 
-class Card(object):
+class Card:
     def __init__(self, value: VALUES, suit: SUITS):
         """
         :param value: one of the key/vlues in Utils.VALUES 

@@ -6,7 +6,7 @@ from dealer.Utils import GAMEMODE, SUITS
 from players.Player import Bet
 
 
-class Logging(object):
+class Logging:
     def __init__(self):
         self.hands = []
         self.bet = Bet(0, 0)

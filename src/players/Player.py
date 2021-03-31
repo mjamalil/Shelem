@@ -6,7 +6,7 @@ from dealer.Deck import Deck
 from dealer.Utils import GAMEMODE, SUITS
 
 
-class Bet(object):
+class Bet:
     def __init__(self, player_id, bet_score):
         self.player_id = player_id
         self.bet_score = bet_score
@@ -23,7 +23,7 @@ class Bet(object):
         return "Bet(player_id=%r, score=%r)" % (self.id, self.bet)
 
 
-class Player(object):
+class Player:
     def __init__(self, player_id, team_mate_player_id):
         self.deck = Deck()
         self.saved_deck = Deck()

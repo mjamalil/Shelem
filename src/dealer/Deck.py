@@ -11,7 +11,7 @@ def split(a, n):
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
 
-class Hand(object):
+class Hand:
     def __init__(self, player_id: int, cards: List[Card]):
         self.cards_map = {}
         self.init_player_id = player_id
@@ -28,7 +28,7 @@ class Hand(object):
         return result
 
 
-class Deck(object):
+class Deck:
     def __init__(self, cards: List[Card]=None, deck_id: int=0):
         if cards is None:
             cards = []

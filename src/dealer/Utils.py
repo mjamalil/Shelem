@@ -38,7 +38,7 @@ class GAMEMODE(Enum):
     ACE_NARAS = "acenaras"
 
 
-class RankedValue(object):
+class RankedValue:
     def __init__(self, name: str, normal_value: int, naras_value: int, ace_naras_value: int):
         self.name = name
         self.normal_value = normal_value

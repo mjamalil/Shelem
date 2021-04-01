@@ -12,7 +12,7 @@ class RuleBasedPlayer(Player):
         super(RuleBasedPlayer, self).__init__(player_id, team_mate_player_id)
 
     # def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
-    def select_saving_card_hand(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
+    def discard_cards_from_leader(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 

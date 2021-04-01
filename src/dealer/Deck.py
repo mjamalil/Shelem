@@ -90,13 +90,15 @@ class Deck:
         Current build does not build Jokers!
         """
         built_cards = []
+        id = 0
         for suit in SUITS:
             if suit == SUITS.NEITHER:
                 continue
             for val in VALUES:
                 if val == VALUES.JOKER:
                     continue
-                built_cards.append(Card(val, suit))
+                built_cards.append(Card(id, val, suit))
+                id += 1
         return list(sorted(built_cards))
 
     def __add__(self, other):

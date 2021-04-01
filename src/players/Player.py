@@ -43,7 +43,7 @@ class Player:
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
 
-    def store_hand(self, hand: List[Card]):
+    def win_trick(self, hand: List[Card]):
         self.saved_deck += hand
 
     def make_hakem(self, middle_hand: Deck)-> Tuple[GAMEMODE, SUITS]:
@@ -55,7 +55,7 @@ class Player:
         self.is_hakem = True
         self.deck += middle_hand
         new_deck = Deck([])
-        saving_indices, game_mode, hokm_suit = self.select_saving_card_hand()
+        saving_indices, game_mode, hokm_suit = self.discard_cards_from_leader()
         for ind in range(16):
             if ind in saving_indices:
                 self.saved_deck += self.deck[ind]
@@ -82,7 +82,7 @@ class Player:
         """
         :return: Pass / 100 < score < 165 / Shelem / Sar-Shelem / Super-Shelem
          Base on a 12-card hand available
-         Sacore should be strictly > previous_last_bet
+         Score should be strictly > previous_last_bet
         """
         # TODO: NotImplemented
         choice = random.random()
@@ -97,9 +97,16 @@ class Player:
         else:
             return Bet(self.player_id, random.randint(31, 33) * 5)
 
-    def select_saving_card_hand(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
+    def discard_cards_from_leader(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 
         """
         return random.sample(range(16), 4), self.game_mode, self.deck.cards[0].suit
+
+    def observer_trick(self, trick: List[Card]):
+        pass
+
+    def compute_reward(self):
+        pass
+

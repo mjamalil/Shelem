@@ -3,11 +3,12 @@ from dealer.Utils import SUITS, GAMEMODE, VALUES
 
 
 class Card:
-    def __init__(self, value: VALUES, suit: SUITS):
+    def __init__(self, id: int, value: VALUES, suit: SUITS):
         """
-        :param value: one of the key/vlues in Utils.VALUES 
-        :param suit: one of the key/vlues in Utils.SUITS
+        :param value: one of the key/values in Utils.VALUES
+        :param suit: one of the key/values in Utils.SUITS
         """
+        self.id = id
         self.suit = suit
         self.value = value
         self.repr = unicard(self.card_abbrev(value, suit))

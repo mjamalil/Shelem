@@ -6,11 +6,13 @@ from dealer.Deck import Deck
 from dealer.Logging import Logging
 from players.Player import Player
 
-
+number_of_params = 71
+NOT_SET = 255
 class Game:
+    NUM_PLAYERS = 4
 
     def __init__(self, players: List[Player], verbose: bool = False):
-        self.game_end = 11650
+        self.game_end = 10
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0
@@ -18,8 +20,11 @@ class Game:
         self.team_2_score = 0
         self.verbose = verbose
         self.logging = Logging()
+        # a series of values storing all data of a round
+        self.game_state = [NOT_SET] * number_of_params
 
     def play_a_round(self) -> Tuple[int, int]:
+        self.game_state = [NOT_SET] * number_of_params
         d1, d2, d3, middle_deck, d4 = self.french_deck.deal()
         self.logging.log_middle_deck(middle_deck)
         decks = deque([d1, d2, d3, d4])
@@ -27,6 +32,8 @@ class Game:
             decks.append(decks.popleft())
         for i in range(4):
             self.players[i].begin_game(decks[i])
+
+        # betting phase
         betting_players = deque(self.players)
         initially_passed_count = 0
         betting_rounds = 0
@@ -45,35 +52,50 @@ class Game:
                 initially_passed_count += 1
                 betting_rounds += 1
         hakem = betting_players.popleft()
-        last_winner_id = hakem.player_id
+        hakem_id = hakem.player_id
         self.logging.log_bet(last_bets[-1])
+
+        # Leader selecting the trump suit
         game_mode, hokm_suit = hakem.make_hakem(middle_deck)
         self.logging.log_hakem_saved_hand(Deck(hakem.saved_deck))
         self.logging.log_hokm(game_mode, hokm_suit)
         for i in range(4):
             self.players[i].set_hokm_and_game_mode(game_mode, hokm_suit)
+
+        # card play phase
         hands_played = []
+        last_winner_id = hakem_id
+
         for i in range(12):
             first_player = last_winner_id
-            next_player_id = last_winner_id
+            current_player_id = last_winner_id
             current_hand = []
-            winner_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
-            current_hand.append(winner_card)
-            for _ in range(3):
-                next_player_id = (next_player_id + 1) % 4
-                played_card = self.players[next_player_id].play_a_card(hands_played, current_hand)
+            winner_card = None
+            for _ in range(4):
+                played_card = self.players[current_player_id].play_a_card(hands_played, current_hand)
+                self.game_state[i * self.NUM_PLAYERS + current_player_id] = played_card.id
                 current_hand.append(played_card)
-                if winner_card.compare(played_card, game_mode, hokm_suit) == -1:
-                    last_winner_id = next_player_id
+                if winner_card:
+                    if winner_card.compare(played_card, game_mode, hokm_suit) == -1:
+                        last_winner_id = current_player_id
+                        winner_card = played_card
+                else:
+                    last_winner_id = current_player_id
                     winner_card = played_card
+                current_player_id = (current_player_id + 1) % 4
             hands_played.append(current_hand)
             self.logging.add_hand(first_player, current_hand)
-            self.players[last_winner_id].store_hand(current_hand)
+            self.players[last_winner_id].win_trick(current_hand)
+            # for _ in range(4):
+            #     self.players
+
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
         team1_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         team2_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
         self.french_deck = self.players[0].saved_deck + self.players[2].saved_deck + \
             self.players[1].saved_deck + self.players[3].saved_deck
+
+        # calculate round score
         final_bet = last_bets[-1]
         team1_has_bet = final_bet.id == 0 or final_bet.id == 2
         if self.verbose:

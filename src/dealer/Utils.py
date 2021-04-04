@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum, auto, IntEnum
 
 
 class OrderedEnum(Enum):
@@ -23,19 +23,19 @@ class OrderedEnum(Enum):
         return NotImplemented
 
 
-class SUITS(Enum):
+class SUITS(IntEnum):
     DIAMONDS = auto()
     CLUBS = auto()
     HEARTS = auto()
     SPADES = auto()
-    NEITHER = auto()
+    NOSUIT = auto()
 
 
-class GAMEMODE(Enum):
-    NORMAL = "normal"
-    SARAS = "saras"
-    NARAS = "naras"
-    ACE_NARAS = "acenaras"
+class GAMEMODE(IntEnum):
+    NORMAL = auto()
+    SARAS = auto()
+    NARAS = auto()
+    ACE_NARAS = auto()
 
 
 class RankedValue:

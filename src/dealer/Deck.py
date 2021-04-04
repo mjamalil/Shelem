@@ -64,7 +64,7 @@ class Deck:
         return len(self.cards)
 
     def get_deck_score(self) -> int:
-        number_of_hands = len(self._cards) / 4
+        number_of_hands = len(self._cards) // 4
         score = number_of_hands * 5
         for card in self._cards:
             if card.value == Utils.VALUES.ACE or card.value == Utils.VALUES.TEN:
@@ -75,12 +75,32 @@ class Deck:
 
     def pop_random_from_suit(self, suit: SUITS):
         # TODO optimize it with memoization
-        if suit is SUITS.NEITHER:
+        if suit is SUITS.NOSUIT:
             return self._cards.pop(0)
         pop_index = 0
         for ind, card in enumerate(self._cards):
             if card.suit == suit:
                 pop_index = ind
+                break
+        return self._cards.pop(pop_index)
+
+    def get_by_value(self, value):
+        for card in self._cards:
+            if card.id == value:
+                return card
+        raise ValueError("Card with this value not found in my deck")
+
+    def has_suit(self, suit: SUITS):
+        for card in self._cards:
+            if card.suit == suit:
+                return True
+        return False
+
+    def pop_card_from_deck(self, card: Card):
+        pop_index = 0
+        for i, c in enumerate(self._cards):
+            if c == card:
+                pop_index = i
                 break
         return self._cards.pop(pop_index)
 
@@ -92,7 +112,7 @@ class Deck:
         built_cards = []
         id = 0
         for suit in SUITS:
-            if suit == SUITS.NEITHER:
+            if suit == SUITS.NOSUIT:
                 continue
             for val in VALUES:
                 if val == VALUES.JOKER:

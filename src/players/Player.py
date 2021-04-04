@@ -30,7 +30,7 @@ class Player:
         self.is_hakem = False
         self.game_has_begun = False
         self.game_mode = GAMEMODE.NORMAL
-        self.hokm_suit = SUITS.NEITHER
+        self.hokm_suit = SUITS.NOSUIT
         self.player_id = player_id
         self.team_mate_player_id = team_mate_player_id
 
@@ -39,14 +39,19 @@ class Player:
         self.game_has_begun = True
         self.saved_deck = Deck()
 
+    def end_game(self):
+        pass
+
     def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS):
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
 
-    def win_trick(self, hand: List[Card]):
-        self.saved_deck += hand
+    def win_trick(self, hand: List[Card], winner_id: int):
+        # calculate reward
+        if self.player_id == winner_id:
+            self.saved_deck += hand
 
-    def make_hakem(self, middle_hand: Deck)-> Tuple[GAMEMODE, SUITS]:
+    def make_hakem(self, middle_hand: Deck) -> Tuple[GAMEMODE, SUITS]:
         """ 
         :return: Game mode and hokm suit 
         """
@@ -64,19 +69,14 @@ class Player:
         self.deck = new_deck
         return game_mode, hokm_suit
 
-    def play_a_card(self, hands_played: List[List[Card]], current_hand: List[Card]) -> Card:
+    def play_a_card(self, game_state, current_suit: SUITS) -> Card:
         """
-        :return: pops and plays the best available card in the current hand  
+        :return: pops and plays the best available card in the current hand
+        request action
         """
         # TODO: NotImplemented
 
-        if current_hand:
-            suit = current_hand[0].suit
-        elif not hands_played and not current_hand:
-            suit = self.hokm_suit
-        else:
-            suit = SUITS.NEITHER
-        return self.deck.pop_random_from_suit(suit)
+        return self.deck.pop_random_from_suit(current_suit)
 
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
         """
@@ -85,6 +85,7 @@ class Player:
          Score should be strictly > previous_last_bet
         """
         # TODO: NotImplemented
+        return Bet(self.player_id, 120)
         choice = random.random()
         if choice < 0.4:
             return Bet(self.player_id, 0)
@@ -103,10 +104,3 @@ class Player:
         :return: 
         """
         return random.sample(range(16), 4), self.game_mode, self.deck.cards[0].suit
-
-    def observer_trick(self, trick: List[Card]):
-        pass
-
-    def compute_reward(self):
-        pass
-

@@ -15,7 +15,7 @@ class Card:
         if self.value == 0:
             self.name = "Joker"
         else:
-            self.name = "%s of %s" % (value.value.name.title(), suit.name.title())
+            self.name = "%sof %s" % (value.value.name.title(), suit.name.title())
 
     def __eq__(self, other):
         return isinstance(other, Card) and self.value == other.value and self.suit == other.suit
@@ -72,8 +72,8 @@ class Card:
                 else:
                     return -1
             elif game_mode == GAMEMODE.NORMAL:
-                if hokm_suit == SUITS.NEITHER:
-                    raise ValueError("In normal game mode you cannot have Hokm == Neither")
+                if hokm_suit == SUITS.NOSUIT:
+                    raise ValueError("In normal game mode you cannot have Hokm == NOSUIT")
                 if self.suit == hokm_suit:
                     return 1
                 elif other.suit == hokm_suit:

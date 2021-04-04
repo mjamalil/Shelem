@@ -9,7 +9,7 @@ from players.Player import Player, Bet
 
 class RuleBasedPlayer(Player):
     def __init__(self, player_id, team_mate_player_id):
-        super(RuleBasedPlayer, self).__init__(player_id, team_mate_player_id)
+        super().__init__(player_id, team_mate_player_id)
 
     # def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
     def discard_cards_from_leader(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:

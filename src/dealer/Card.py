@@ -39,7 +39,7 @@ class Card:
         return hash((self.value, self.suit))
 
     def __repr__(self):
-        return "Card(value=%r, suit=%r)" % (self.value.name, self.suit.name)
+        return "Card(value={}, suit={}, id={})".format(self.value.name, self.suit.name, self.id)
 
     def __str__(self):
         return self.name

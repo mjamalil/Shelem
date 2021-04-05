@@ -42,7 +42,11 @@ class ShelemEnv(gym.Env):
         # else:
         #     self.move_right()
         # self.update_done_reward_and_visited_final_state()
-        self.reward = 1
+        print(action)
+        if action == 20:
+            self.reward = 10
+        else:
+            self.reward = -10
         self.done = False
         self.next_state = self.observation_space.sample()
         self.state = self.next_state
@@ -51,7 +55,6 @@ class ShelemEnv(gym.Env):
 
     def reset(self):
         self.state = self.observation_space.sample()  # environment always starts in state 1
-        print(self.state)
         self.next_state = None
         self.reward = None
         self.done = False

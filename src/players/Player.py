@@ -33,21 +33,24 @@ class Player:
         self.hokm_suit = SUITS.NOSUIT
         self.player_id = player_id
         self.team_mate_player_id = team_mate_player_id
+        self.trick_number = 0
 
-    def begin_game(self, deck: Deck):
+    def begin_round(self, deck: Deck):
         self.deck = deck
         self.game_has_begun = True
         self.saved_deck = Deck()
+        self.trick_number = 0
 
-    def end_game(self):
+    def end_round(self, team1_score: int, team2_score: int):
         pass
 
     def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS):
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
 
-    def win_trick(self, hand: List[Card], winner_id: int):
+    def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
         # calculate reward
+        self.trick_number += 1
         if self.player_id == winner_id:
             self.saved_deck += hand
 
@@ -69,7 +72,7 @@ class Player:
         self.deck = new_deck
         return game_mode, hokm_suit
 
-    def play_a_card(self, game_state, current_suit: SUITS) -> Card:
+    def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
         """
         :return: pops and plays the best available card in the current hand
         request action

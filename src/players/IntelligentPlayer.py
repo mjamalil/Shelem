@@ -3,34 +3,54 @@ from typing import Tuple, List
 import numpy as np
 from dealer.Card import Card
 from dealer.Deck import Deck
-from dealer.Utils import GAMEMODE, SUITS
+from dealer.Utils import GAMEMODE, SUITS, PLAYER_INITIAL_CARDS
 from players.Player import Player, Bet
-from players.Env import ShelemEnv
 from players.PPO import Memory, PPO
-import torch
-import torch.nn as nn
-from torch.distributions import Categorical
+
+number_of_params = 71
+NOT_SET = 255
 
 
 class IntelligentPlayer(Player):
-    def begin_game(self, deck: Deck):
-        super().begin_game(deck)
-        # print(self.deck)
 
     def __init__(self, player_id, team_mate_player_id):
         super().__init__(player_id, team_mate_player_id)
         self.init_ppo()
+        self.game_state = []
+        self.PLAYED_CARD_OFFSET = 16
 
-    def end_game(self):
-        self.memory.is_terminals.append(True)
+    def begin_round(self, deck: Deck):
+        super().begin_round(deck)
+        # a series of values storing all data of a round
+        # game_state = my cards + ground cards + played tricks + game status
+        self.game_state = [NOT_SET] * number_of_params
+        self.game_state[-1] = GAMEMODE.NORMAL
+        for i in range(len(deck.cards)):
+            self.game_state[i] = deck.cards[i].id
 
-    def win_trick(self, hand: List[Card], winner_id: int):
-        super().win_trick(hand, winner_id)
+    def end_round(self, team1_score: int, team2_score: int):
+        if self.player_id in [0, 2]:
+            for i in range(PLAYER_INITIAL_CARDS-1):
+                self.give_reward(team1_score - team2_score, False)
+            self.give_reward(team1_score - team2_score, True)
+        else:
+            for i in range(PLAYER_INITIAL_CARDS-1):
+                self.give_reward(team2_score - team1_score, False)
+            self.give_reward(team1_score - team2_score, True)
+        self.ppo.update(self.memory)
+        self.memory.clear_memory()
+
+    def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
+        for i in range(len(hand)):
+            self.game_state[self.PLAYED_CARD_OFFSET + self.trick_number * 4 + (first_player + i) % 4] = hand[i].id
+        super().win_trick(hand, winner_id, first_player)
+
         if winner_id == self.player_id or winner_id == self.team_mate_player_id:
             reward = Deck(hand).get_deck_score()
         else:
             reward = -Deck(hand).get_deck_score()
-        self.memory.rewards.append(reward)
+        done = True if self.trick_number == 12 else False
+        # self.give_reward(reward, done)
 
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
         """
@@ -41,35 +61,42 @@ class IntelligentPlayer(Player):
         # TODO: NotImplemented
         return Bet(self.player_id, 120)
 
+    def make_hakem(self, middle_hand: Deck) -> Tuple[GAMEMODE, SUITS]:
+        result = super().make_hakem(middle_hand)
+        self.game_state[-2] = result[1]
+        return result
+
     def discard_cards_from_leader(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
         :return: 
         """
         # TODO: NotImplemented
-        suit_select = random.randint(1, 4)
-        if suit_select == 1:
-            hokm_suit = SUITS.SPADES
-        elif suit_select == 2:
-            hokm_suit = SUITS.HEARTS
-        elif suit_select == 3:
-            hokm_suit = SUITS.DIAMONDS
-        else:
-            hokm_suit = SUITS.CLUBS
-        return random.sample(range(16), 4), self.game_mode, hokm_suit
+        return super().discard_cards_from_leader()
 
-    def play_a_card(self, game_state: List, current_suit: SUITS) -> Card:
+    def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
         """
         :return: pops and plays the best available card in the current hand  
         """
-        # print(len(game_state))
+        # action = self.ppo.policy_old.act(np.array(game_state), self.memory)
+        # print(action == 20)
+        # if action == 20:
+        #     self.memory.rewards.append(20)
+        # else:
+        #     self.memory.rewards.append(-20)
+        # return super().play_a_card(game_state, current_suit)
+        self.game_state[-3] = current_suit
+        copy_current_hand = current_hand[:]
+        for i in range(len(current_hand)):
+            state_idx = self.PLAYED_CARD_OFFSET + self.trick_number * 4 + (self.player_id - i + 3) % 4
+            self.game_state[state_idx] = copy_current_hand.pop().id
 
         invalid_card = True
         invalid_card_reward = -1000
         invalid_count = 1
         while invalid_card:
             try:
-                action = self.ppo.policy_old.act(np.array(game_state), self.memory)
+                action = self.request_action(self.game_state)
                 selected_card = self.deck.get_by_value(action)
             except ValueError:
                 pass
@@ -81,8 +108,8 @@ class IntelligentPlayer(Player):
                     invalid_card = False
             if invalid_card:
                 invalid_count += 1
-                self.memory.rewards.append(invalid_card_reward)
-        print(f"Good card aft?er {invalid_count} tries -> {selected_card}")
+                self.give_reward(invalid_card_reward, False)
+        print(f"Good card after {invalid_count} tries -> {selected_card}")
 
         return self.deck.pop_card_from_deck(selected_card)
 
@@ -109,9 +136,6 @@ class IntelligentPlayer(Player):
     def init_ppo(self):
         state_dim = 71
         action_dim = 52
-        env = ShelemEnv(action_dim, state_dim)
-        env_name = env.environment_name
-
         render = False
         solved_reward = 230         # stop training if avg_reward > solved_reward
         log_interval = 20           # print avg reward in the interval
@@ -134,52 +158,10 @@ class IntelligentPlayer(Player):
 
         self.memory = Memory()
         self.ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
-        # print(lr, betas)
 
-        # logging variables
-        running_reward = 0
-        avg_length = 0
-        timestep = 0
+    def give_reward(self, reward: int, done: bool):
+        self.memory.rewards.append(reward)
+        self.memory.is_terminals.append(done)
 
-        # training loop
-        # for i_episode in range(1, max_episodes+1):
-        #     state = env.reset()
-        #     for t in range(max_timesteps):
-        #         timestep += 1
-        #
-        #         # Running policy_old:
-        #         action = self.ppo.policy_old.act(state, self.memory)
-        #         state, reward, done, _ = env.step(action)
-        #
-        #         # Saving reward and is_terminal:
-        #         self.memory.rewards.append(reward)
-        #         self.memory.is_terminals.append(done)
-        #
-        #         # update if its time
-        #         if timestep % update_timestep == 0:
-        #             self.ppo.update(self.memory)
-        #             self.memory.clear_memory()
-        #             timestep = 0
-        #
-        #         running_reward += reward
-        #         if render:
-        #             env.render()
-        #         if done:
-        #             break
-        #
-        #     avg_length += t
-        #
-        #     # stop training if avg_reward > solved_reward
-        #     if running_reward > (log_interval*solved_reward):
-        #         print("########## Solved! ##########")
-        #         torch.save(self.ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
-        #         break
-        #
-        #     # logging
-        #     if i_episode % log_interval == 0:
-        #         avg_length = int(avg_length/log_interval)
-        #         running_reward = int((running_reward/log_interval))
-        #
-        #         print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
-        #         running_reward = 0
-        #         avg_length = 0
+    def request_action(self, game_state: List):
+        return self.ppo.policy_old.act(np.array(game_state), self.memory)

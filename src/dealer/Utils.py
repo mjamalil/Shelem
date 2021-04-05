@@ -1,5 +1,7 @@
 from enum import Enum, auto, IntEnum
 
+NUM_PLAYERS = 4
+PLAYER_INITIAL_CARDS = 12
 
 class OrderedEnum(Enum):
     def __ge__(self, other):
@@ -128,6 +130,7 @@ ACE_NARAS_RANKS = {
 
 def _reverse_mapper(rank_set):
     return {v: k for k, v in rank_set.items()}
+
 
 # REVERSE_SUITS = _reverse_mapper(SUITS)
 REVERSE_ACE_NARAS_RANKS = _reverse_mapper(ACE_NARAS_RANKS)

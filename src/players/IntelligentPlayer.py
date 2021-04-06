@@ -24,7 +24,6 @@ class IntelligentPlayer(Player):
         # a series of values storing all data of a round
         # game_state = my cards + ground cards + played tricks + game status
         self.game_state = [NOT_SET] * number_of_params
-        self.game_state[-1] = GAMEMODE.NORMAL
         for i in range(len(deck.cards)):
             self.game_state[i] = deck.cards[i].id
 
@@ -49,7 +48,7 @@ class IntelligentPlayer(Player):
             reward = Deck(hand).get_deck_score()
         else:
             reward = -Deck(hand).get_deck_score()
-        done = True if self.trick_number == 12 else False
+        done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
         # self.give_reward(reward, done)
 
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
@@ -62,9 +61,22 @@ class IntelligentPlayer(Player):
         return Bet(self.player_id, 120)
 
     def make_hakem(self, middle_hand: Deck) -> Tuple[GAMEMODE, SUITS]:
+        """
+        :return: Game mode and hokm suit
+        """
         result = super().make_hakem(middle_hand)
-        self.game_state[-2] = result[1]
+
+        # set new deck
+        for i in range(len(self.deck.cards)):
+            self.game_state[i] = self.deck.cards[i].id
+        # set widow cards
+        for i in range(4):
+            self.game_state[PLAYER_INITIAL_CARDS+i] = self.saved_deck[i].id
         return result
+
+    def hokm_has_been_determined(self, game_mode, hokm_suit):
+        self.game_state[-1] = game_mode
+        self.game_state[-2] = hokm_suit
 
     def discard_cards_from_leader(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
@@ -79,7 +91,6 @@ class IntelligentPlayer(Player):
         :return: pops and plays the best available card in the current hand  
         """
         # action = self.ppo.policy_old.act(np.array(game_state), self.memory)
-        # print(action == 20)
         # if action == 20:
         #     self.memory.rewards.append(20)
         # else:
@@ -109,7 +120,14 @@ class IntelligentPlayer(Player):
             if invalid_card:
                 invalid_count += 1
                 self.give_reward(invalid_card_reward, False)
-        print(f"Good card after {invalid_count} tries -> {selected_card}")
+        print(f"Good card after {invalid_count} tries -> {selected_card.id}")
+        # remove card from game state
+        for i in range(PLAYER_INITIAL_CARDS):
+            if self.game_state[i] == selected_card.id:
+                self.game_state[i] = NOT_SET
+                break
+        else:
+            raise ValueError("can't find selected card: {}".format(selected_card.id))
 
         return self.deck.pop_card_from_deck(selected_card)
 

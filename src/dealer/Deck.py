@@ -102,6 +102,8 @@ class Deck:
             if c == card:
                 pop_index = i
                 break
+        else:
+            raise ValueError("can't find selected card: {}".format(card))
         return self._cards.pop(pop_index)
 
     @staticmethod

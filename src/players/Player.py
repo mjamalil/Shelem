@@ -63,14 +63,17 @@ class Player:
         self.is_hakem = True
         self.deck += middle_hand
         new_deck = Deck([])
-        saving_indices, game_mode, hokm_suit = self.discard_cards_from_leader()
+        discarding_indices, game_mode, hokm_suit = self.discard_cards_from_leader()
         for ind in range(16):
-            if ind in saving_indices:
+            if ind in discarding_indices:
                 self.saved_deck += self.deck[ind]
             else:
                 new_deck += self.deck[ind]
         self.deck = new_deck
         return game_mode, hokm_suit
+
+    def hokm_has_been_determined(self, game_mode, hokm_suit):
+        pass
 
     def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
         """

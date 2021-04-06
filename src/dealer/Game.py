@@ -12,7 +12,7 @@ from players.Player import Player
 class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):
-        self.game_end = 10000
+        self.game_end = 1000
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0
@@ -59,6 +59,8 @@ class Game:
 
         # Leader selecting the trump suit
         game_mode, hokm_suit = hakem.make_hakem(middle_deck)
+        for i in range(NUM_PLAYERS):
+            self.players[i].hokm_has_been_determined(game_mode, hokm_suit)
         self.logging.log_hakem_saved_hand(Deck(hakem.saved_deck))
         self.logging.log_hokm(game_mode, hokm_suit)
         for i in range(NUM_PLAYERS):
@@ -146,4 +148,4 @@ class Game:
 
 
 if __name__ == '__main__':
-    Game([IntelligentPlayer(0, 2), Player(1, 3), IntelligentPlayer(2, 0), Player(3, 1)]).begin_game()
+    Game([IntelligentPlayer(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()

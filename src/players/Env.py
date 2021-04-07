@@ -16,6 +16,8 @@ class ShelemEnv(gym.Env):
         #     gamestate=spaces.Box(0, 10, shape=(num_states,), dtype=np.int64),
         # ))
         self.observation_space = spaces.Box(0, 200, shape=(num_states,), dtype=np.int64)
+        self.observation_space = spaces.Box(np.array([0,0,0,0,0]), np.array([10,10,10,10,10]), dtype=np.int64)
+        # self.observation_space = spaces.MultiDiscrete([4,12,4, 48,3])
         self.seed()
         self.reward_threshold = 1.0
         self.trials = 100
@@ -34,15 +36,7 @@ class ShelemEnv(gym.Env):
 
     def step(self, action):
         self.episode_steps += 1
-        # if type(action) is np.ndarray:
-        #     action = action[0]
-        # assert action in [0, 1], "Action must be a 0 or a 1"
-        # if action == 0:
-        #     self.move_left()
-        # else:
-        #     self.move_right()
-        # self.update_done_reward_and_visited_final_state()
-        print(action)
+        # print(action)
         if action == 20:
             self.reward = 10
         else:
@@ -55,6 +49,7 @@ class ShelemEnv(gym.Env):
 
     def reset(self):
         self.state = self.observation_space.sample()  # environment always starts in state 1
+        print(self.state)
         self.next_state = None
         self.reward = None
         self.done = False

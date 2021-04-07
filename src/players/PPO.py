@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.distributions import Categorical
-
+import numpy as np
 from players.Env import ShelemEnv
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -132,6 +132,13 @@ def main():
     action_dim = 52
     env = ShelemEnv(action_dim, state_dim)
     env_name = env.environment_name
+    state_dim = env.observation_space.shape[0]
+    num_box = tuple((env.observation_space.high + np.ones(env.observation_space.shape)).astype(int))
+    print(env.observation_space.shape)
+    q_table = np.zeros(num_box+(env.action_space.n,))
+    print(num_box+(env.action_space.n,))
+    print(np.zeros((2,2)))
+
 
     render = False
     solved_reward = 230         # stop training if avg_reward > solved_reward

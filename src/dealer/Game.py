@@ -5,14 +5,14 @@ from collections import deque
 from dealer.Deck import Deck
 from dealer.Logging import Logging
 from dealer.Utils import SUITS, NUM_PLAYERS
-from players.IntelligentPlayer import IntelligentPlayer
+from players.IntelligentPlayer import IntelligentPlayer, QLearnPlayer
 from players.Player import Player
 
 
 class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):
-        self.game_end = 1000
+        self.game_end = 10000
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0
@@ -148,4 +148,4 @@ class Game:
 
 
 if __name__ == '__main__':
-    Game([IntelligentPlayer(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()
+    Game([QLearnPlayer(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()

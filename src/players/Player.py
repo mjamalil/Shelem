@@ -48,6 +48,9 @@ class Player:
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
 
+    def card_has_been_played(self, played_card: Card):
+        pass
+
     def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
         # calculate reward
         self.trick_number += 1
@@ -72,7 +75,7 @@ class Player:
         self.deck = new_deck
         return game_mode, hokm_suit
 
-    def hokm_has_been_determined(self, game_mode, hokm_suit):
+    def hokm_has_been_determined(self, game_mode: GAMEMODE, hokm_suit: SUITS):
         pass
 
     def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:

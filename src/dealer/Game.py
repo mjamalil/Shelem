@@ -5,14 +5,14 @@ from collections import deque
 from dealer.Deck import Deck
 from dealer.Logging import Logging
 from dealer.Utils import SUITS, NUM_PLAYERS
-from players.IntelligentPlayer import IntelligentPlayer, QLearnPlayer
+from players.IntelligentPlayer import IntelligentPlayer, QLearnPlayer, PPOPlayer
 from players.Player import Player
 
 
 class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):
-        self.game_end = 10000
+        self.game_end = 100000
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0
@@ -76,10 +76,12 @@ class Game:
             current_hand = []
             winner_card = None
 
-            for _ in range(4):
+            for _ in range(NUM_PLAYERS):
                 played_card = self.players[current_player_id].play_a_card(current_hand, current_suit)
                 current_suit = played_card.suit
-                # self.game_state[OFFSET_PLAYED_CARDS + i * self.NUM_PLAYERS + current_player_id] = played_card.id
+                for j in range(NUM_PLAYERS):
+                    self.players[j].card_has_been_played(played_card)
+
                 current_hand.append(played_card)
                 if winner_card:
                     if winner_card.compare(played_card, game_mode, hokm_suit) == -1:
@@ -93,7 +95,7 @@ class Game:
             current_suit = SUITS.NOSUIT
             self.logging.add_hand(first_player, current_hand)
 
-            for i in range(4):
+            for i in range(NUM_PLAYERS):
                 self.players[i].win_trick(current_hand, last_winner_id, first_player)
 
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
@@ -148,4 +150,4 @@ class Game:
 
 
 if __name__ == '__main__':
-    Game([QLearnPlayer(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()
+    Game([PPOPlayer(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()

@@ -29,6 +29,8 @@ class Hand:
 
 
 class Deck:
+    deck_size = 52
+
     def __init__(self, cards: List[Card]=None, deck_id: int=0):
         if cards is None:
             cards = []
@@ -38,7 +40,7 @@ class Deck:
     def deal(self) -> Tuple[Any, Any, Any, Any, Any]:
         if len(self.cards) == 0:
             self._cards = self.build_cards()
-        if len(self._cards) < 52:
+        if len(self._cards) < self.deck_size:
             raise ValueError("Not enough cards in deck to shuffle and deal!")
         self._shuffle()
         cards = list(self.cards)

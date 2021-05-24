@@ -7,9 +7,15 @@ from dealer.Utils import GAMEMODE, SUITS, PLAYER_INITIAL_CARDS
 from players.Player import Player, Bet
 from players.PPO import Memory, PPO
 
-number_of_params = 12
-NOT_SET = 255
+NUMBER_OF_PARAMS = 109
+NOT_SET = 0
 ACTION_DIM = 52
+STATE_TRUMP_IDX = 52
+STATE_SUIT_IDX = 53
+STATE_CRR_TRICK_IDX = 54
+STATE_PLAYED_CARDS_IDX = 57
+DECK_SIZE = 52
+
 
 class IntelligentPlayer(Player):
 
@@ -23,9 +29,11 @@ class IntelligentPlayer(Player):
         super().begin_round(deck)
         # a series of values storing all data of a round
         # game_state = my cards + ground cards + played tricks + game status
-        self.game_state = [NOT_SET] * number_of_params
+        self.game_state = [NOT_SET] * NUMBER_OF_PARAMS
         for i in range(len(deck.cards)):
-            self.game_state[i] = deck.cards[i].id
+            if deck.cards[i].id >= 52:
+                raise Exception("Invalid card id")
+            self.game_state[deck.cards[i].id] = 1
 
     def end_round(self, team1_score: int, team2_score: int):
         pass
@@ -41,22 +49,33 @@ class IntelligentPlayer(Player):
 
     def make_hakem(self, middle_hand: Deck) -> Tuple[GAMEMODE, SUITS]:
         """
+        This is only executed for hakem
         :return: Game mode and hokm suit
         """
         result = super().make_hakem(middle_hand)
 
         # set new deck
+        for i in range(DECK_SIZE):
+            self.game_state[i] = 0
         for i in range(len(self.deck.cards)):
-            self.game_state[i] = self.deck.cards[i].id
+            self.game_state[self.deck.cards[i].id] = 1
         # set widow cards
-        # for i in range(4):
-        #     self.game_state[PLAYER_INITIAL_CARDS+i] = self.saved_deck[i].id
+        widow_size = 4
+        for i in range(widow_size):
+            self.game_state[STATE_PLAYED_CARDS_IDX+self.saved_deck[i].id] = 1
         return result
 
-    def hokm_has_been_determined(self, game_mode, hokm_suit):
-        # self.game_state[-1] = game_mode
-        # self.game_state[-2] = hokm_suit
+    def hokm_has_been_determined(self, game_mode: GAMEMODE, hokm_suit: SUITS):
+        # self.game_state[] = game_mode
+        self.game_state[STATE_TRUMP_IDX] = hokm_suit/SUITS.NOSUIT
         pass
+
+    def card_has_been_played(self, played_card: Card):
+        # self.log_game_state()
+        # remove card from game state
+        self.game_state[played_card.id] = 0
+        # add card to played cards
+        self.game_state[STATE_PLAYED_CARDS_IDX+played_card.id] = 1
 
     def discard_cards_from_leader(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
@@ -95,10 +114,17 @@ class IntelligentPlayer(Player):
     def build_model(self):
         pass
 
+    def log_game_state(self):
+        print("MyCards", self.game_state[:STATE_TRUMP_IDX])
+        print("Trump", self.game_state[STATE_TRUMP_IDX])
+        print("Current Suit", self.game_state[STATE_SUIT_IDX])
+        print("Current Trick", self.game_state[STATE_CRR_TRICK_IDX:STATE_PLAYED_CARDS_IDX])
+        print("Played Cards", self.game_state[STATE_PLAYED_CARDS_IDX:])
+
 class PPOPlayer(IntelligentPlayer):
 
     def build_model(self):
-        state_dim = number_of_params
+        state_dim = NUMBER_OF_PARAMS
         action_dim = ACTION_DIM
         #############################################
         n_latent_var = 64           # number of variables in hidden layer
@@ -122,10 +148,18 @@ class PPOPlayer(IntelligentPlayer):
         #     self.memory.rewards.append(-20)
         # return super().play_a_card(game_state, current_suit)
         # self.game_state[-3] = current_suit
-        copy_current_hand = current_hand[:]
         # for i in range(len(current_hand)):
         #     state_idx = self.PLAYED_CARD_OFFSET + self.trick_number * 4 + (self.player_id - i + 3) % 4
         #     self.game_state[state_idx] = copy_current_hand.pop().id
+
+        # Set current suit and trick in game state
+        max_crr_trick_num = 3
+        self.game_state[STATE_SUIT_IDX] = current_suit/SUITS.NOSUIT
+        for i in range(max_crr_trick_num):
+            if i < len(current_hand):
+                self.game_state[STATE_CRR_TRICK_IDX+i] = current_hand[i].id/DECK_SIZE
+            else:
+                self.game_state[STATE_CRR_TRICK_IDX+i] = 1
 
         invalid_card = True
         invalid_card_reward = -1000
@@ -145,15 +179,9 @@ class PPOPlayer(IntelligentPlayer):
             if invalid_card:
                 invalid_count += 1
                 self.give_reward(invalid_card_reward, False)
-        print(f"Good card after {invalid_count} tries -> {selected_card.id}")
-        # remove card from game state
-        for i in range(PLAYER_INITIAL_CARDS):
-            if self.game_state[i] == selected_card.id:
-                self.game_state[i] = NOT_SET
-                break
-        else:
+        # print(f"Good card after {invalid_count} tries -> {selected_card.id}")
+        if self.game_state[selected_card.id] == 0:
             raise ValueError("can't find selected card: {}".format(selected_card.id))
-
         return self.deck.pop_card_from_deck(selected_card)
 
     def give_reward(self, reward: int, done: bool):
@@ -165,20 +193,17 @@ class PPOPlayer(IntelligentPlayer):
 
     def end_round(self, team1_score: int, team2_score: int):
         if self.player_id in [0, 2]:
-            for i in range(PLAYER_INITIAL_CARDS-1):
-                self.give_reward(team1_score - team2_score, False)
+            # for i in range(PLAYER_INITIAL_CARDS-1):
+            #     self.give_reward(team1_score - team2_score, False)
             self.give_reward(team1_score - team2_score, True)
         else:
-            for i in range(PLAYER_INITIAL_CARDS-1):
-                self.give_reward(team2_score - team1_score, False)
-            self.give_reward(team1_score - team2_score, True)
+            # for i in range(PLAYER_INITIAL_CARDS-1):
+            #     self.give_reward(team2_score - team1_score, False)
+            self.give_reward(team2_score - team1_score, True)
         self.ppo.update(self.memory)
         self.memory.clear_memory()
 
     def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
-        # for i in range(len(hand)):
-        #     self.game_state[self.PLAYED_CARD_OFFSET + self.trick_number * 4 + (first_player + i) % 4] = hand[i].id
-
         super().win_trick(hand, winner_id, first_player)
 
         if winner_id == self.player_id or winner_id == self.team_mate_player_id:
@@ -186,7 +211,8 @@ class PPOPlayer(IntelligentPlayer):
         else:
             reward = -Deck(hand).get_deck_score()
         done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
-        # self.give_reward(reward, done)
+        if not done:
+            self.give_reward(reward, done)
 
 class QLearnPlayer(IntelligentPlayer):
 
@@ -201,7 +227,7 @@ class QLearnPlayer(IntelligentPlayer):
         self.epsilon_decay = 0.001
         self.learning_rate = 0.1
         self.gamma = 0.6
-        self.q_table = np.zeros(number_of_params*(ACTION_DIM,))
+        self.q_table = np.zeros(NUMBER_OF_PARAMS*(ACTION_DIM,))
 
     def give_reward(self, action: int, reward: int, state: List, next_state: List):
         q_value = self.q_table[state][action]

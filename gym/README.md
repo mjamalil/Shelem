@@ -1,0 +1,3 @@
+- To run the code mark `gym_shelem` folder as sources root and run `trainer.py`.
+- The packages `dealer` and `players` are redundant between `gym_shelem` and the parent sibling folder `src`. The main reason for this is to prevent requirement conflicts among `gym` requirements and what the previous implementation needed.
+- **NOTE:** This is an initial code structure and no training whatsoever is happening in `policy` package (this is probably the best place to start implementation of the learning algorithm).  

@@ -1,8 +1,5 @@
 from enum import Enum, auto, IntEnum
 
-NUM_PLAYERS = 4
-PLAYER_INITIAL_CARDS = 12
-
 class OrderedEnum(Enum):
     def __ge__(self, other):
         if self.__class__ is other.__class__:
@@ -59,20 +56,20 @@ class RankedValue:
 
 
 class VALUES(Enum):
-    ACE =   RankedValue("A ",   13, 1, 13)
-    KING =  RankedValue("K ",  12, 2, 1)
-    QUEEN = RankedValue("Q ", 11, 3, 2)
-    JACK =  RankedValue("J ",  10, 4, 5)
-    TEN =   RankedValue("10",    9,  5, 3)
-    NINE =  RankedValue("9 ",     8,  6, 4)
-    EIGHT = RankedValue("8 ",     7,  7, 5)
-    SEVEN = RankedValue("7 ",     6,  8, 6)
-    SIX =   RankedValue("6 ",     5,  9, 7)
-    FIVE =  RankedValue("5 ",     4, 10, 8)
-    FOUR =  RankedValue("4 ",     3, 11, 9)
-    THREE = RankedValue("3 ",     2, 12, 10)
-    TWO =   RankedValue("2 ",     1, 13, 11)
-    JOKER = RankedValue("Jokers", 0,  0, 12)
+    Two =   RankedValue("2 ",   1, 13, 11)
+    Three = RankedValue("3 ",   2, 12, 10)
+    Four =  RankedValue("4 ",   3, 11, 9)
+    Five =  RankedValue("5 ",   4, 10, 8)
+    Six =   RankedValue("6 ",   5, 9, 7)
+    Seven = RankedValue("7 ",   6, 8, 6)
+    Eight = RankedValue("8 ",   7, 7, 5)
+    Nine =  RankedValue("9 ",   8, 6, 4)
+    Ten =   RankedValue("10",   9, 5, 3)
+    Jack =  RankedValue("J ",  10, 4, 5)
+    Queen = RankedValue("Q ",  11, 3, 2)
+    King =  RankedValue("K ",  12, 2, 1)
+    Ace =   RankedValue("A ",  13, 1, 13)
+    Joker = RankedValue("Jokers", 0, 0, 12)
 
 NORMAL_RANKS = {
     "Ace": 13,
@@ -94,46 +91,39 @@ NORMAL_RANKS = {
 SARAS_RANKS = NORMAL_RANKS
 
 NARAS_RANKS = {
-    "Ace": 1,
-    "King": 2,
-    "Queen": 3,
-    "Jack": 4,
-    "10": 5,
-    "9": 6,
-    "8": 7,
-    "7": 8,
-    "6": 9,
-    "5": 10,
-    "4": 11,
-    "3": 12,
     "2": 13,
+    "3": 12,
+    "4": 11,
+    "5": 10,
+    "6": 9,
+    "7": 8,
+    "8": 7,
+    "9": 6,
+    "10": 5,
+    "Jack": 4,
+    "Queen": 3,
+    "King": 2,
+    "Ace": 1,
     "Joker": 0
 }
 
 ACE_NARAS_RANKS = {
-    "King": 1,
-    "Queen": 2,
-    "Jack": 3,
-    "10": 4,
-    "9": 5,
-    "8": 6,
-    "7": 7,
-    "6": 8,
-    "5": 9,
-    "4": 10,
-    "3": 11,
-    "2": 12,
     "Ace": 13,
-    "Joker": 0
+    "2": 12,
+    "3": 11,
+    "4": 10,
+    "5": 9,
+    "6": 8,
+    "7": 7,
+    "8": 6,
+    "9": 5,
+    "10": 4,
+    "Jack": 3,
+    "Queen": 2,
+    "King": 1,
+    "Joker": 0,
 }
 
+GAME_MODES = {
 
-def _reverse_mapper(rank_set):
-    return {v: k for k, v in rank_set.items()}
-
-
-# REVERSE_SUITS = _reverse_mapper(SUITS)
-REVERSE_ACE_NARAS_RANKS = _reverse_mapper(ACE_NARAS_RANKS)
-REVERSE_NARAS_RANKS = _reverse_mapper(NARAS_RANKS)
-REVERSE_NORMAL_RANKS = _reverse_mapper(NORMAL_RANKS)
-REVERSE_SARAS_RANKS = _reverse_mapper(NARAS_RANKS)
+}

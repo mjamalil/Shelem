@@ -3,21 +3,14 @@ from typing import Tuple, List
 import numpy as np
 from dealer.Card import Card
 from dealer.Deck import Deck
-from dealer.Utils import GAMEMODE, SUITS, PLAYER_INITIAL_CARDS
+from dealer.Utils import GAMEMODE, SUITS
 from players.Player import Player, Bet
 from players.PPO import Memory, PPO
-
-NUMBER_OF_PARAMS = 109
-NOT_SET = 0
-ACTION_DIM = 52
-STATE_TRUMP_IDX = 52
-STATE_SUIT_IDX = 53
-STATE_CRR_TRICK_IDX = 54
-STATE_PLAYED_CARDS_IDX = 57
-DECK_SIZE = 52
+from players.Enum import *
 
 
 class IntelligentPlayer(Player):
+    hokm_suit = SUITS.NOSUIT
 
     def __init__(self, player_id, team_mate_player_id):
         super().__init__(player_id, team_mate_player_id)
@@ -31,8 +24,6 @@ class IntelligentPlayer(Player):
         # game_state = my cards + ground cards + played tricks + game status
         self.game_state = [NOT_SET] * NUMBER_OF_PARAMS
         for i in range(len(deck.cards)):
-            if deck.cards[i].id >= 52:
-                raise Exception("Invalid card id")
             self.game_state[deck.cards[i].id] = 1
 
     def end_round(self, team1_score: int, team2_score: int):
@@ -66,12 +57,21 @@ class IntelligentPlayer(Player):
         return result
 
     def hokm_has_been_determined(self, game_mode: GAMEMODE, hokm_suit: SUITS):
-        # self.game_state[] = game_mode
+        self.game_mode = game_mode
+        self.hokm_suit = hokm_suit
         self.game_state[STATE_TRUMP_IDX] = hokm_suit/SUITS.NOSUIT
-        pass
+
+    def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
+        # Set current suit and trick in game state
+        max_crr_trick_num = 3
+        self.game_state[STATE_SUIT_IDX] = current_suit/SUITS.NOSUIT
+        for i in range(max_crr_trick_num):
+            if i < len(current_hand):
+                self.game_state[STATE_CRR_TRICK_IDX+i] = current_hand[i].id/DECK_SIZE
+            else:
+                self.game_state[STATE_CRR_TRICK_IDX+i] = 1
 
     def card_has_been_played(self, played_card: Card):
-        # self.log_game_state()
         # remove card from game state
         self.game_state[played_card.id] = 0
         # add card to played cards
@@ -141,26 +141,7 @@ class PPOPlayer(IntelligentPlayer):
         """
         :return: pops and plays the best available card in the current hand
         """
-        # action = self.ppo.policy_old.act(np.array(game_state), self.memory)
-        # if action == 20:
-        #     self.memory.rewards.append(20)
-        # else:
-        #     self.memory.rewards.append(-20)
-        # return super().play_a_card(game_state, current_suit)
-        # self.game_state[-3] = current_suit
-        # for i in range(len(current_hand)):
-        #     state_idx = self.PLAYED_CARD_OFFSET + self.trick_number * 4 + (self.player_id - i + 3) % 4
-        #     self.game_state[state_idx] = copy_current_hand.pop().id
-
-        # Set current suit and trick in game state
-        max_crr_trick_num = 3
-        self.game_state[STATE_SUIT_IDX] = current_suit/SUITS.NOSUIT
-        for i in range(max_crr_trick_num):
-            if i < len(current_hand):
-                self.game_state[STATE_CRR_TRICK_IDX+i] = current_hand[i].id/DECK_SIZE
-            else:
-                self.game_state[STATE_CRR_TRICK_IDX+i] = 1
-
+        super().play_a_card(current_hand, current_suit)
         invalid_card = True
         invalid_card_reward = -1000
         invalid_count = 1
@@ -288,7 +269,6 @@ class QLearnPlayer(IntelligentPlayer):
             if invalid_card:
                 invalid_count += 1
                 self.give_reward(action, invalid_card_reward, self.game_state, self.game_state)
-        print(f"Good card after {invalid_count} tries -> {selected_card.id}")
         self.current_action = action
         self.current_state = self.game_state[:]
         # remove card from game state

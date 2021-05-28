@@ -1,18 +1,20 @@
+from collections import deque
 from typing import Tuple, List
 
-from collections import deque
-
+from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
-from dealer.Utils import SUITS, NUM_PLAYERS
-from players.IntelligentPlayer import IntelligentPlayer, QLearnPlayer, PPOPlayer
+from dealer.Utils import SUITS
+from players.Enum import NUM_PLAYERS
+from players.IntelligentPlayer import PPOPlayer
 from players.Player import Player
+from players.RuleBasedPlayer import RuleBasedPlayer
 
 
 class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):
-        self.game_end = 100000
+        self.game_end = 11650
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0
@@ -20,6 +22,15 @@ class Game:
         self.team_2_score = 0
         self.verbose = verbose
         self.logging = Logging()
+
+    @staticmethod
+    def check_card_validity(player: Player, card: Card, suit: SUITS):
+        if suit == SUITS.NOSUIT or card.suit == suit:
+            return True
+        for c in player.deck.cards:
+            if c.suit == suit:
+                return False
+        return True
 
     def play_a_round(self) -> Tuple[int, int]:
         # the last three number shows game mode, trump_suit, current_suit
@@ -63,6 +74,7 @@ class Game:
             self.players[i].hokm_has_been_determined(game_mode, hokm_suit)
         self.logging.log_hakem_saved_hand(Deck(hakem.saved_deck))
         self.logging.log_hokm(game_mode, hokm_suit)
+        # print(game_mode, hokm_suit)
         for i in range(NUM_PLAYERS):
             self.players[i].set_hokm_and_game_mode(game_mode, hokm_suit)
 
@@ -75,21 +87,26 @@ class Game:
             current_player_id = last_winner_id
             current_hand = []
             winner_card = None
+            # print("="*40)
 
             for _ in range(NUM_PLAYERS):
                 played_card = self.players[current_player_id].play_a_card(current_hand, current_suit)
-                current_suit = played_card.suit
+                valid_card = self.check_card_validity(self.players[current_player_id], played_card, current_suit)
+                if not valid_card:
+                    raise RuntimeError("Player {} played invalid card {}".format(current_player_id, played_card))
+                # print(f"{current_player_id}-{played_card}")
                 for j in range(NUM_PLAYERS):
                     self.players[j].card_has_been_played(played_card)
 
                 current_hand.append(played_card)
                 if winner_card:
-                    if winner_card.compare(played_card, game_mode, hokm_suit) == -1:
+                    if Card.compare(winner_card, played_card, game_mode, hokm_suit, current_suit) < 0:
                         last_winner_id = current_player_id
                         winner_card = played_card
                 else:
                     last_winner_id = current_player_id
                     winner_card = played_card
+                    current_suit = played_card.suit
                 current_player_id = (current_player_id + 1) % 4
             hands_played.append(current_hand)
             current_suit = SUITS.NOSUIT
@@ -150,4 +167,4 @@ class Game:
 
 
 if __name__ == '__main__':
-    Game([PPOPlayer(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()
+    Game([PPOPlayer(0, 2), Player(1, 3), Player(2, 0), RuleBasedPlayer(3, 1)]).begin_game()

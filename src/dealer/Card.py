@@ -24,66 +24,59 @@ class Card:
         return not isinstance(other, Card) or self.value != other.value or self.suit != other.suit
 
     def __ge__(self, other):
-        if isinstance(other, Card):
-            return self.value > other.value or (self.value >= other.value and self.suit >= other.suit)
-        else:
-            return False
+        return self.id >= other.id
 
     def __gt__(self, other):
-        if isinstance(other, Card):
-            return self.value > other.value or (self.value >= other.value and self.suit > other.suit)
-        else:
-            return False
+        return self.id > other.id
+
+    def __le__(self, other):
+        return self.id <= other.id
+
+    def __lt__(self, other):
+        return self.id < other.id
 
     def __hash__(self):
         return hash((self.value, self.suit))
 
     def __repr__(self):
-        return "Card(value={}, suit={}, id={})".format(self.value.name, self.suit.name, self.id)
+        return "({}-{})".format(self.id, self.name)
 
     def __str__(self):
         return self.name
 
-    def __lt__(self, other):
-        if isinstance(other, Card):
-            return True
-        else:
-            return False
-
-    def compare(self, other, game_mode, hokm_suit):
+    @staticmethod
+    def compare(first, second, game_mode, hokm_suit, current_suit):
         """
-        Only the first players card is supposed to call the compare function to other cards
-        :param other: another card to be compared
+        :param first : first card to be compared
+        :param second: another card to be compared
         :param game_mode: the mode in which the game is being played
         :param hokm_suit: the hokm suit is considered only if is_naras=False / can be None[saras] 
-        :return:    1: self is greater
-                    0: equal [must not happen]
-                    -1: other is greater
-                    -2: other if not a Card [error]
+        :return:    15, -15 boresh
+                    14 , -14: different suit and it's a higher card therefore
+                    > 1 , < -1: same suit value difference is returned
+                    0: none is bigger than the other
         """
-        if isinstance(other, Card):
-            my_value = self.value.value.get_value(game_mode)
-            other_value = other.value.value.get_value(game_mode)
-            if self.suit == other.suit:
-                if my_value > other_value:
-                    return 1
-                elif my_value == other_value:
-                    return 0
-                else:
-                    return -1
-            elif game_mode == GAMEMODE.NORMAL:
+        hokm_difference = 15
+        suit_difference = 14
+        if isinstance(first, Card) and isinstance(second, Card):
+            my_value = first.value.value.get_value(game_mode)
+            second_value = second.value.value.get_value(game_mode)
+            if first.suit == second.suit:
+                return my_value - second_value
+            if game_mode == GAMEMODE.NORMAL:
                 if hokm_suit == SUITS.NOSUIT:
                     raise ValueError("In normal game mode you cannot have Hokm == NOSUIT")
-                if self.suit == hokm_suit:
-                    return 1
-                elif other.suit == hokm_suit:
-                    return -1
-                else:
-                    return 1
-            else:
-                return 1
+                if first.suit == hokm_suit:
+                    return hokm_difference
+                elif second.suit == hokm_suit:
+                    return -hokm_difference
+            if first.suit == current_suit:
+                return suit_difference
+            if second.suit == current_suit:
+                return -suit_difference
+            return 0
         else:
-            return -2
+            raise ValueError("invalid value for cards")
 
     @staticmethod
     def card_abbrev(value, suit):
@@ -93,3 +86,4 @@ class Card:
             return "T%s" % (suit.name[0])
         else:
             return "%s%s" % (value.value.name[0], suit.name[0])
+

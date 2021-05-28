@@ -1,9 +1,9 @@
+import random
 from typing import List, Tuple, Any
 
 from dealer import Utils
-from dealer.Utils import SUITS, VALUES
 from dealer.Card import Card
-import random
+from dealer.Utils import SUITS, VALUES
 
 
 def split(a, n):
@@ -31,7 +31,7 @@ class Hand:
 class Deck:
     deck_size = 52
 
-    def __init__(self, cards: List[Card]=None, deck_id: int=0):
+    def __init__(self, cards: List[Card] = None, deck_id: int = 0):
         if cards is None:
             cards = []
         self._cards = list(sorted(cards))
@@ -45,7 +45,7 @@ class Deck:
         self._shuffle()
         cards = list(self.cards)
         return Deck(cards[0:12], 1), Deck(cards[12:24], 2), Deck(cards[24:36], 3), \
-            Deck(cards[36:40]), Deck(cards[40:52], 4)
+               Deck(cards[36:40]), Deck(cards[40:52], 4)
 
     def _shuffle(self):
         if len(self.cards) == 0:
@@ -69,9 +69,9 @@ class Deck:
         number_of_hands = len(self._cards) // 4
         score = number_of_hands * 5
         for card in self._cards:
-            if card.value == Utils.VALUES.ACE or card.value == Utils.VALUES.TEN:
+            if card.value == Utils.VALUES.Ace or card.value == Utils.VALUES.Ten:
                 score += 10
-            elif card.value == Utils.VALUES.FIVE:
+            elif card.value == Utils.VALUES.Five:
                 score += 5
         return score
 
@@ -99,7 +99,6 @@ class Deck:
         return False
 
     def pop_card_from_deck(self, card: Card):
-        pop_index = 0
         for i, c in enumerate(self._cards):
             if c == card:
                 pop_index = i
@@ -115,15 +114,17 @@ class Deck:
         """
         built_cards = []
         id = 0
-        for suit in SUITS:
-            if suit == SUITS.NOSUIT:
-                continue
-            for val in VALUES:
-                if val == VALUES.JOKER:
+        for val in VALUES:
+            for suit in SUITS:
+                if suit == SUITS.NOSUIT:
                     continue
-                built_cards.append(Card(id, val, suit))
+                if val == VALUES.Joker:
+                    continue
+                new_card = Card(id, val, suit)
+                built_cards.append(new_card)
                 id += 1
-        return list(sorted(built_cards))
+        random.shuffle(built_cards)
+        return built_cards
 
     def __add__(self, other):
         if isinstance(other, Deck):
@@ -147,7 +148,16 @@ class Deck:
         return self
 
     def __str__(self):
-        return "".join([x.name + "\n" for x in self._cards]).rstrip("\n")
+        cards = {}
+        for suit in SUITS:
+            if suit == SUITS.NOSUIT:
+                continue
+            cards[suit] = []
+            for c in self._cards:
+                if c.suit == suit:
+                    cards[suit].append(c.value.value.name.title())
+
+        return "/".join(["{} of {}".format(",".join(cards[suit]), suit.name.title()) for suit in cards])
 
     def __repr__(self):
         return "Stack(cards=%r)" % self._cards

@@ -10,7 +10,8 @@ from players.IntelligentPlayer import PPOPlayer
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
 
-
+training = True
+benchmark_rounds = 2000
 class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):
@@ -151,8 +152,9 @@ class Game:
         round_counter = 1
         while not self.check_game_finished():
             s1, s2 = self.play_a_round()
-            self.team_1_score += s1
-            self.team_2_score += s2
+            if not training or round_counter > benchmark_rounds:
+                self.team_1_score += s1
+                self.team_2_score += s2
             print("Round {:04d}: H:{} Team 1 score = {:04d} ({:04d}) and Team 2 score = {:04d} ({:04d})".format(
                 round_counter, self.hakem_id, s1, self.team_1_score, s2, self.team_2_score))
             round_counter += 1

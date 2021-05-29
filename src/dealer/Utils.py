@@ -56,20 +56,20 @@ class RankedValue:
 
 
 class VALUES(Enum):
-    Two =   RankedValue("2 ",   1, 13, 11)
-    Three = RankedValue("3 ",   2, 12, 10)
-    Four =  RankedValue("4 ",   3, 11, 9)
-    Five =  RankedValue("5 ",   4, 10, 8)
-    Six =   RankedValue("6 ",   5, 9, 7)
-    Seven = RankedValue("7 ",   6, 8, 6)
-    Eight = RankedValue("8 ",   7, 7, 5)
-    Nine =  RankedValue("9 ",   8, 6, 4)
-    Ten =   RankedValue("10",   9, 5, 3)
-    Jack =  RankedValue("J ",  10, 4, 5)
+    Two =   RankedValue("2 ",   1, 13, 12)
+    Three = RankedValue("3 ",   2, 12, 11)
+    Four =  RankedValue("4 ",   3, 11, 10)
+    Five =  RankedValue("5 ",   4, 10, 9)
+    Six =   RankedValue("6 ",   5, 9, 8)
+    Seven = RankedValue("7 ",   6, 8, 7)
+    Eight = RankedValue("8 ",   7, 7, 6)
+    Nine =  RankedValue("9 ",   8, 6, 5)
+    Ten =   RankedValue("10",   9, 5, 4)
+    Jack =  RankedValue("J ",  10, 4, 3)
     Queen = RankedValue("Q ",  11, 3, 2)
     King =  RankedValue("K ",  12, 2, 1)
     Ace =   RankedValue("A ",  13, 1, 13)
-    Joker = RankedValue("Jokers", 0, 0, 12)
+    Joker = RankedValue("Jokers", 0, 0, 0)
 
 NORMAL_RANKS = {
     "Ace": 13,
@@ -124,6 +124,13 @@ ACE_NARAS_RANKS = {
     "Joker": 0,
 }
 
-GAME_MODES = {
-
-}
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'

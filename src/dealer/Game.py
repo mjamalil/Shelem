@@ -4,7 +4,7 @@ from typing import Tuple, List
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
-from dealer.Utils import SUITS
+from dealer.Utils import SUITS, bcolors
 from players.Enum import NUM_PLAYERS
 from players.IntelligentPlayer import PPOPlayer
 from players.Player import Player
@@ -14,7 +14,7 @@ from players.RuleBasedPlayer import RuleBasedPlayer
 class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):
-        self.game_end = 11650
+        self.game_end = 1165
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0
@@ -94,7 +94,7 @@ class Game:
                 valid_card = self.check_card_validity(self.players[current_player_id], played_card, current_suit)
                 if not valid_card:
                     raise RuntimeError("Player {} played invalid card {}".format(current_player_id, played_card))
-                # print(f"{current_player_id}-{played_card}")
+                # print(f"{bcolors.OKGREEN}{current_player_id}-{played_card}{bcolors.ENDC}")
                 for j in range(NUM_PLAYERS):
                     self.players[j].card_has_been_played(played_card)
 
@@ -167,4 +167,4 @@ class Game:
 
 
 if __name__ == '__main__':
-    Game([PPOPlayer(0, 2), Player(1, 3), Player(2, 0), RuleBasedPlayer(3, 1)]).begin_game()
+    Game([PPOPlayer(0, 2), RuleBasedPlayer(1, 3), RuleBasedPlayer(2, 0), RuleBasedPlayer(3, 1)]).begin_game()

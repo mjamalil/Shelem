@@ -13,11 +13,11 @@ class RuleBasedPlayer(IntelligentPlayer):
         super().begin_round(deck)
         self.played_cards = ([], [], [], [], [])
 
-    def card_has_been_played(self, played_card: Card):
-        super().card_has_been_played(played_card)
-        self.played_cards[played_card.suit].append(played_card.value)
+    def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
+        super().win_trick(hand, winner_id, first_player)
+        for c in hand:
+            self.played_cards[c.suit].append(c.value)
 
-    # def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
     def discard_cards_from_leader_advanced(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
@@ -45,7 +45,7 @@ class RuleBasedPlayer(IntelligentPlayer):
         super().play_a_card(current_hand, current_suit)
         turn = len(current_hand)
         # print("*"*40)
-        # print(self.deck.cards)
+        # print(self.deck)
         if turn == 0:
             card = self.play_turn0(current_suit)
         elif turn == 1:
@@ -134,6 +134,7 @@ class RuleBasedPlayer(IntelligentPlayer):
         return best_card
 
     def play_lowest_card(self, current_suit: SUITS):
+        # print("Playing lowest card")
         for c in self.deck.cards:
             if c.suit == current_suit:
                 return c

@@ -1,4 +1,3 @@
-import random
 from typing import Tuple, List
 import numpy as np
 from dealer.Card import Card
@@ -71,12 +70,6 @@ class IntelligentPlayer(Player):
             else:
                 self.game_state[STATE_CRR_TRICK_IDX+i] = 1
 
-    def card_has_been_played(self, played_card: Card):
-        # remove card from game state
-        self.game_state[played_card.id] = 0
-        # add card to played cards
-        self.game_state[STATE_PLAYED_CARDS_IDX+played_card.id] = 1
-
     def discard_cards_from_leader(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
         if its a hakem hand, selects 4 indices out of 16 and removes them out of hand and saves them in saved_deck 
@@ -106,10 +99,12 @@ class IntelligentPlayer(Player):
         return encoding_vector
 
     def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
-        # for i in range(len(hand)):
-        #     self.game_state[self.PLAYED_CARD_OFFSET + self.trick_number * 4 + (first_player + i) % 4] = hand[i].id
-
         super().win_trick(hand, winner_id, first_player)
+        for c in hand:
+            # remove card from my cards if I have it
+            self.game_state[c.id] = 0
+            # add card to played cards
+            self.game_state[STATE_PLAYED_CARDS_IDX+c.id] = 1
 
     def build_model(self):
         pass
@@ -143,7 +138,7 @@ class PPOPlayer(IntelligentPlayer):
         """
         super().play_a_card(current_hand, current_suit)
         invalid_card = True
-        invalid_card_reward = -1000
+        invalid_card_reward = -1
         invalid_count = 1
         while invalid_card:
             try:
@@ -159,28 +154,33 @@ class PPOPlayer(IntelligentPlayer):
                     invalid_card = False
             if invalid_card:
                 invalid_count += 1
-                self.give_reward(invalid_card_reward, False)
+                self.set_reward(invalid_card_reward, False)
         # print(f"Good card after {invalid_count} tries -> {selected_card.id}")
         if self.game_state[selected_card.id] == 0:
             raise ValueError("can't find selected card: {}".format(selected_card.id))
         return self.deck.pop_card_from_deck(selected_card)
 
-    def give_reward(self, reward: int, done: bool):
-        self.memory.rewards.append(reward)
+    def set_reward(self, reward: int, done: bool):
+        self.memory.rewards.append(reward + self.reward)
         self.memory.is_terminals.append(done)
+
+    def set_reward2(self, reward: int, done: bool):
+        self.memory.rewards.append(reward + self.reward)
+        self.memory.is_terminals.append(done)
+        self.reward = 0
 
     def request_action(self, game_state: List):
         return self.ppo.policy.act(np.array(game_state), self.memory)
 
+    def begin_round(self, deck: Deck):
+        super().begin_round(deck)
+        self.reward = 0
+
     def end_round(self, team1_score: int, team2_score: int):
         if self.player_id in [0, 2]:
-            # for i in range(PLAYER_INITIAL_CARDS-1):
-            #     self.give_reward(team1_score - team2_score, False)
-            self.give_reward(team1_score - team2_score, True)
+            self.set_reward(team1_score - team2_score + self.reward, True)
         else:
-            # for i in range(PLAYER_INITIAL_CARDS-1):
-            #     self.give_reward(team2_score - team1_score, False)
-            self.give_reward(team2_score - team1_score, True)
+            self.set_reward(team2_score - team1_score + self.reward, True)
         self.ppo.update(self.memory)
         self.memory.clear_memory()
 
@@ -192,93 +192,6 @@ class PPOPlayer(IntelligentPlayer):
         else:
             reward = -Deck(hand).get_deck_score()
         done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
+        self.reward = reward
         if not done:
-            self.give_reward(reward, done)
-
-class QLearnPlayer(IntelligentPlayer):
-
-    def __init__(self, player_id, team_mate_player_id):
-        super().__init__(player_id, team_mate_player_id)
-        self.q_table_actions = []
-        self.current_action = None
-        self.current_state = None
-
-    def build_model(self):
-        self.epsilon = 1
-        self.epsilon_decay = 0.001
-        self.learning_rate = 0.1
-        self.gamma = 0.6
-        self.q_table = np.zeros(NUMBER_OF_PARAMS*(ACTION_DIM,))
-
-    def give_reward(self, action: int, reward: int, state: List, next_state: List):
-        q_value = self.q_table[state][action]
-        best_q = np.max(self.q_table[next_state])
-        new_q = (1-self.learning_rate) * q_value + self.learning_rate * (reward + self.gamma * best_q)
-        self.q_table[state][action] = new_q
-
-    def request_action(self, game_state: List):
-        self.epsilon -= self.epsilon_decay
-        if random.uniform(0, 1) < self.epsilon:
-            action = random.randint(0, ACTION_DIM-1)
-        else:
-            action = np.argmax(self.q_table[game_state])
-        return action
-
-    def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
-        super().win_trick(hand, winner_id, first_player)
-
-        if winner_id == self.player_id or winner_id == self.team_mate_player_id:
-            reward = Deck(hand).get_deck_score()
-        else:
-            reward = -Deck(hand).get_deck_score()
-
-        done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
-        self.give_reward(self.current_action, reward, self.current_state, self.game_state)
-
-    def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
-        """
-        :return: pops and plays the best available card in the current hand
-        """
-        # action = self.ppo.policy_old.act(np.array(game_state), self.memory)
-        # if action == 20:
-        #     self.memory.rewards.append(20)
-        # else:
-        #     self.memory.rewards.append(-20)
-        # return super().play_a_card(game_state, current_suit)
-        # self.game_state[-3] = current_suit
-        # copy_current_hand = current_hand[:]
-        # for i in range(len(current_hand)):
-        #     state_idx = self.PLAYED_CARD_OFFSET + self.trick_number * 4 + (self.player_id - i + 3) % 4
-        #     self.game_state[state_idx] = copy_current_hand.pop().id
-
-        invalid_card = True
-        invalid_card_reward = -1000
-        invalid_count = 1
-        while invalid_card:
-            try:
-                action = self.request_action(self.game_state)
-                selected_card = self.deck.get_by_value(action)
-            except ValueError:
-                pass
-            else:
-                if self.deck.has_suit(current_suit):
-                    if selected_card.suit == current_suit:
-                        invalid_card = False
-                else:
-                    invalid_card = False
-            if invalid_card:
-                invalid_count += 1
-                self.give_reward(action, invalid_card_reward, self.game_state, self.game_state)
-        self.current_action = action
-        self.current_state = self.game_state[:]
-        # remove card from game state
-        for i in range(PLAYER_INITIAL_CARDS):
-            if self.game_state[i] == selected_card.id:
-                self.game_state[i] = NOT_SET
-                break
-        else:
-            raise RuntimeError("can't find selected card: {}".format(selected_card.id))
-
-        return self.deck.pop_card_from_deck(selected_card)
-
-
+            self.set_reward(reward, False)

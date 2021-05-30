@@ -34,6 +34,7 @@ class Player:
         self.player_id = player_id
         self.team_mate_player_id = team_mate_player_id
         self.trick_number = 0
+        self.hakem_bid = 0
 
     def begin_round(self, deck: Deck):
         self.deck = deck
@@ -75,8 +76,8 @@ class Player:
         self.deck = new_deck
         return game_mode, hokm_suit
 
-    def hokm_has_been_determined(self, game_mode: GAMEMODE, hokm_suit: SUITS):
-        pass
+    def hokm_has_been_determined(self, game_mode: GAMEMODE, hokm_suit: SUITS, bid: Bet):
+        self.hakem_bid = bid
 
     def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
         """

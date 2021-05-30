@@ -55,7 +55,8 @@ class IntelligentPlayer(Player):
             self.game_state[STATE_PLAYED_CARDS_IDX+self.saved_deck[i].id] = 1
         return result
 
-    def hokm_has_been_determined(self, game_mode: GAMEMODE, hokm_suit: SUITS):
+    def hokm_has_been_determined(self, game_mode: GAMEMODE, hokm_suit: SUITS, bid: Bet):
+        super().hokm_has_been_determined(game_mode, hokm_suit, bid)
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
         self.game_state[STATE_TRUMP_IDX] = hokm_suit/SUITS.NOSUIT
@@ -160,8 +161,8 @@ class PPOPlayer(IntelligentPlayer):
             raise ValueError("can't find selected card: {}".format(selected_card.id))
         return self.deck.pop_card_from_deck(selected_card)
 
-    def set_reward(self, reward: int, done: bool):
-        self.memory.rewards.append(reward + self.reward)
+    def set_reward(self, reward: float, done: bool):
+        self.memory.rewards.append(reward)
         self.memory.is_terminals.append(done)
 
     def set_reward2(self, reward: int, done: bool):
@@ -178,19 +179,23 @@ class PPOPlayer(IntelligentPlayer):
 
     def end_round(self, team1_score: int, team2_score: int):
         if self.player_id in [0, 2]:
-            self.set_reward(team1_score - team2_score + self.reward, True)
+            reward = (team1_score - team2_score + self.reward) / 330
         else:
-            self.set_reward(team2_score - team1_score + self.reward, True)
+            reward = (team2_score - team1_score + self.reward) / 330
+        if reward > 1:
+            reward = 1
+        elif reward < -1:
+            reward = -1
+        self.set_reward(reward, True)
         self.ppo.update(self.memory)
         self.memory.clear_memory()
 
     def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
         super().win_trick(hand, winner_id, first_player)
-
         if winner_id == self.player_id or winner_id == self.team_mate_player_id:
-            reward = Deck(hand).get_deck_score()
+            reward = Deck(hand).get_deck_score() / self.hakem_bid.bet_score
         else:
-            reward = -Deck(hand).get_deck_score()
+            reward = -Deck(hand).get_deck_score() / self.hakem_bid.bet_score
         done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
         self.reward = reward
         if not done:

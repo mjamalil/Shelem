@@ -72,7 +72,7 @@ class Game:
         # Leader selecting the trump suit
         game_mode, hokm_suit = hakem.make_hakem(middle_deck)
         for i in range(NUM_PLAYERS):
-            self.players[i].hokm_has_been_determined(game_mode, hokm_suit)
+            self.players[i].hokm_has_been_determined(game_mode, hokm_suit, last_bets[-1])
         self.logging.log_hakem_saved_hand(Deck(hakem.saved_deck))
         self.logging.log_hokm(game_mode, hokm_suit)
         # print(game_mode, hokm_suit)

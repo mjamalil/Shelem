@@ -176,7 +176,11 @@ def main():
 
             # Running policy_old:
             action = ppo.policy_old.act(state, memory)
-            state, reward, done, _ = env.step(action)
+            print(action)
+            # state, reward, done, _ = env.step(action)
+            state, reward, done = state, -1, False
+            if action == 20:
+                reward = 1
 
             # Saving reward and is_terminal:
             memory.rewards.append(reward)

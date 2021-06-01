@@ -138,9 +138,17 @@ class PPOPlayer(IntelligentPlayer):
         :return: pops and plays the best available card in the current hand
         """
         super().play_a_card(current_hand, current_suit)
+        print(self.deck)
         invalid_card = True
-        invalid_card_reward = -1
+        invalid_card_reward = 0
         invalid_count = 1
+        # action = self.request_action(self.game_state)
+        # print(action)
+        # if action == 25:
+        #     self.set_reward(1, True)
+        # else:
+        #     self.set_reward(-1, True)
+        # return self.deck.pop_random_from_suit(current_suit)
         while invalid_card:
             try:
                 action = self.request_action(self.game_state)
@@ -159,36 +167,43 @@ class PPOPlayer(IntelligentPlayer):
         # print(f"Good card after {invalid_count} tries -> {selected_card.id}")
         if self.game_state[selected_card.id] == 0:
             raise ValueError("can't find selected card: {}".format(selected_card.id))
+
         return self.deck.pop_card_from_deck(selected_card)
 
     def set_reward(self, reward: float, done: bool):
         self.memory.rewards.append(reward)
         self.memory.is_terminals.append(done)
 
-    def set_reward2(self, reward: int, done: bool):
-        self.memory.rewards.append(reward + self.reward)
-        self.memory.is_terminals.append(done)
-        self.reward = 0
-
     def request_action(self, game_state: List):
-        return self.ppo.policy.act(np.array(game_state), self.memory)
+        return self.ppo.policy_old.act(np.array(game_state), self.memory)
 
     def begin_round(self, deck: Deck):
         super().begin_round(deck)
-        self.reward = 0
 
     def end_round(self, team1_score: int, team2_score: int):
+        # if self.player_id in [0, 2]:
+        #     reward = (team1_score - team2_score) / 330
+        # else:
+        #     reward = (team2_score - team1_score) / 330
+        # if reward > 1:
+        #     reward = 1
+        # elif reward < -1:
+        #     reward = -1
         if self.player_id in [0, 2]:
-            reward = (team1_score - team2_score + self.reward) / 330
+            if team1_score > team2_score:
+                reward = 1
+            else:
+                reward = -1
         else:
-            reward = (team2_score - team1_score + self.reward) / 330
-        if reward > 1:
-            reward = 1
-        elif reward < -1:
-            reward = -1
+            if team1_score > team2_score:
+                reward = -1
+            else:
+                reward = 1
+        print("reward:{}".format(reward))
         self.set_reward(reward, True)
         self.ppo.update(self.memory)
         self.memory.clear_memory()
+        pass
 
     def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
         super().win_trick(hand, winner_id, first_player)
@@ -197,6 +212,6 @@ class PPOPlayer(IntelligentPlayer):
         else:
             reward = -Deck(hand).get_deck_score() / self.hakem_bid.bet_score
         done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
-        self.reward = reward
+        print("reward:{}".format(reward))
         if not done:
             self.set_reward(reward, False)

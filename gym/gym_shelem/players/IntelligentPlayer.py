@@ -22,7 +22,7 @@ class IntelligentPlayer(Player):
         """
         :return: Pass / 100 < score < 165 / Shelem / Sar-Shelem / Super-Shelem
          Base on a 12-card hand available
-         Sacore should be strictly > previous_last_bet
+         Score should be strictly > previous_last_bet
         """
         # TODO: NotImplemented
         choice = random.random()

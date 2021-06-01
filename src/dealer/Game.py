@@ -4,14 +4,14 @@ from typing import Tuple, List
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
-from dealer.Utils import SUITS, bcolors
+from dealer.Utils import SUITS, colors
 from players.Enum import NUM_PLAYERS
 from players.IntelligentPlayer import PPOPlayer
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
 
 training = True
-benchmark_rounds = 1000
+benchmark_rounds = 500
 class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):
@@ -88,14 +88,14 @@ class Game:
             current_player_id = last_winner_id
             current_hand = []
             winner_card = None
-            # print("="*40)
+            print("="*40)
 
             for _ in range(NUM_PLAYERS):
                 played_card = self.players[current_player_id].play_a_card(current_hand, current_suit)
                 valid_card = self.check_card_validity(self.players[current_player_id], played_card, current_suit)
                 if not valid_card:
                     raise RuntimeError("Player {} played invalid card {}".format(current_player_id, played_card))
-                # print(f"{bcolors.OKGREEN}{current_player_id}-{played_card}{bcolors.ENDC}")
+                print(f"{colors.OKGREEN}{current_player_id}-{played_card}{colors.ENDC}")
                 for j in range(NUM_PLAYERS):
                     self.players[j].card_has_been_played(played_card)
 
@@ -155,10 +155,11 @@ class Game:
             if not training or round_counter > benchmark_rounds:
                 self.team_1_score += s1
                 self.team_2_score += s2
-            print("Round {:04d}: H:{} Team 1 score = {:04d} ({:04d}) and Team 2 score = {:04d} ({:04d})".format(
-                round_counter, self.hakem_id, s1, self.team_1_score, s2, self.team_2_score))
+            print("{}Round {:04d}: H:{} Team 1 score = {:04d} ({:04d}) and Team 2 score = {:04d} ({:04d}){}".format(
+                colors.WARNING, round_counter, self.hakem_id, s1, self.team_1_score, s2, self.team_2_score, colors.ENDC))
             round_counter += 1
-        print("Final Scores = Team 1 score = {} and Team 2 score = {}".format(self.team_1_score, self.team_2_score))
+        print("{}Final Scores = Team 1 score = {} and Team 2 score = {}{}".format(
+            colors.OKCYAN, self.team_1_score, self.team_2_score, colors.ENDC))
 
     def check_game_finished(self):
         if self.team_1_score >= self.game_end or self.team_1_score - self.team_2_score >= self.game_end:

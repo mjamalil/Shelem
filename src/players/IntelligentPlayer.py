@@ -2,7 +2,7 @@ from typing import Tuple, List
 import numpy as np
 from dealer.Card import Card
 from dealer.Deck import Deck
-from dealer.Utils import GAMEMODE, SUITS
+from dealer.Utils import GAMEMODE, SUITS, VALUES
 from players.Player import Player, Bet
 from players.PPO import Memory, PPO
 from players.Enum import *
@@ -140,7 +140,7 @@ class PPOPlayer(IntelligentPlayer):
         super().play_a_card(current_hand, current_suit)
         print(self.deck)
         invalid_card = True
-        invalid_card_reward = 0
+        invalid_card_reward = -1
         invalid_count = 1
         # action = self.request_action(self.game_state)
         # print(action)
@@ -167,6 +167,10 @@ class PPOPlayer(IntelligentPlayer):
         # print(f"Good card after {invalid_count} tries -> {selected_card.id}")
         if self.game_state[selected_card.id] == 0:
             raise ValueError("can't find selected card: {}".format(selected_card.id))
+        if selected_card.value == VALUES.Ace:
+            self.reward = 1
+        else:
+            self.reward = -1
 
         return self.deck.pop_card_from_deck(selected_card)
 
@@ -179,6 +183,7 @@ class PPOPlayer(IntelligentPlayer):
 
     def begin_round(self, deck: Deck):
         super().begin_round(deck)
+        self.reward = 0
 
     def end_round(self, team1_score: int, team2_score: int):
         # if self.player_id in [0, 2]:
@@ -200,7 +205,7 @@ class PPOPlayer(IntelligentPlayer):
             else:
                 reward = 1
         print("reward:{}".format(reward))
-        self.set_reward(reward, True)
+        self.set_reward(self.reward, True)
         self.ppo.update(self.memory)
         self.memory.clear_memory()
         pass
@@ -214,4 +219,5 @@ class PPOPlayer(IntelligentPlayer):
         done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
         print("reward:{}".format(reward))
         if not done:
-            self.set_reward(reward, False)
+        #     self.set_reward(reward, False)
+            self.set_reward(self.reward, False)

@@ -48,8 +48,9 @@ class Deck:
                Deck(cards[36:40]), Deck(cards[40:52], 4)
 
     def _shuffle(self):
-        if len(self.cards) == 0:
-            self._cards = self.build_cards()
+        random.shuffle(self._cards)
+
+    def _shuffle2(self):
         cards = list(self._cards)
         for i in range(random.randint(1, 3)):
             splitted = [x for x in split(cards, random.randint(2, 5))]
@@ -123,7 +124,6 @@ class Deck:
                 new_card = Card(id, val, suit)
                 built_cards.append(new_card)
                 id += 1
-        random.shuffle(built_cards)
         return built_cards
 
     def __add__(self, other):

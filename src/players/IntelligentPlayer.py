@@ -4,11 +4,10 @@ from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Utils import GAMEMODE, SUITS, VALUES
 from players.Player import Player, Bet
-from players.PPO import Memory, PPO
 from players.Enum import *
 
 
-class IntelligentPlayer(Player):
+class BaseIntelligentPlayer(Player):
     hokm_suit = SUITS.NOSUIT
 
     def __init__(self, player_id, team_mate_player_id):
@@ -16,6 +15,9 @@ class IntelligentPlayer(Player):
         self.build_model()
         self.game_state = []
         self.PLAYED_CARD_OFFSET = 16
+
+    def init_policies_from_another_policy(self, other_policy):
+        pass
 
     def begin_round(self, deck: Deck):
         super().begin_round(deck)
@@ -99,8 +101,8 @@ class IntelligentPlayer(Player):
             encoding_vector[st * 13 + val + len(score_mappings)*4] = 1
         return encoding_vector
 
-    def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
-        super().win_trick(hand, winner_id, first_player)
+    def win_trick(self, hand: List[Card], winner_id: int):
+        super().win_trick(hand, winner_id)
         for c in hand:
             # remove card from my cards if I have it
             self.game_state[c.id] = 0
@@ -117,7 +119,14 @@ class IntelligentPlayer(Player):
         print("Current Trick", self.game_state[STATE_CRR_TRICK_IDX:STATE_PLAYED_CARDS_IDX])
         print("Played Cards", self.game_state[STATE_PLAYED_CARDS_IDX:])
 
-class PPOPlayer(IntelligentPlayer):
+class IntelligentPlayer(BaseIntelligentPlayer):
+
+    def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
+        super().play_a_card(current_hand, current_suit)
+        return self.deck.pop_random_from_suit(current_suit)
+
+
+class PPOPlayer(BaseIntelligentPlayer):
 
     def build_model(self):
         state_dim = NUMBER_OF_PARAMS
@@ -130,6 +139,7 @@ class PPOPlayer(IntelligentPlayer):
         K_epochs = 4                # update policy for K epochs
         eps_clip = 0.2              # clip parameter for PPO
         #############################################
+        from players.PPO import Memory, PPO
         self.memory = Memory()
         self.ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
 
@@ -138,7 +148,6 @@ class PPOPlayer(IntelligentPlayer):
         :return: pops and plays the best available card in the current hand
         """
         super().play_a_card(current_hand, current_suit)
-        print(self.deck)
         invalid_card = True
         invalid_card_reward = -1
         invalid_count = 1
@@ -210,8 +219,8 @@ class PPOPlayer(IntelligentPlayer):
         self.memory.clear_memory()
         pass
 
-    def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
-        super().win_trick(hand, winner_id, first_player)
+    def win_trick(self, hand: List[Card], winner_id: int):
+        super().win_trick(hand, winner_id)
         if winner_id == self.player_id or winner_id == self.team_mate_player_id:
             reward = Deck(hand).get_deck_score() / self.hakem_bid.bet_score
         else:

@@ -75,7 +75,7 @@ class Deck(object):
 
     def pop_random_from_suit(self, suit: SUITS):
         # TODO optimize it with memoization
-        if suit is SUITS.NEITHER:
+        if suit is SUITS.NOSUIT:
             return self._cards.pop(0)
         pop_index = 0
         for ind, card in enumerate(self._cards):
@@ -91,7 +91,7 @@ class Deck(object):
         """
         built_cards = []
         for suit in SUITS:
-            if suit == SUITS.NEITHER:
+            if suit == SUITS.NOSUIT:
                 continue
             for val in VALUES:
                 if val == VALUES.JOKER:

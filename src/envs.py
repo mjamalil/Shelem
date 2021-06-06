@@ -5,19 +5,16 @@ from gym import spaces
 from collections import deque
 from typing import List
 
+from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
 from dealer.Utils import GAMESTATE, GAMEMODE, SUITS
 from players.IntelligentPlayer import IntelligentPlayer
 from players.Player import Player
 
-from policies.policy_dqn import ShelemPolicyDQN
-
 
 class ThreeConsecutivePassesException(Exception):
-    def __init__(self, message):
-        super().__init__(message)
-
+    pass
 
 class ShelemEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -54,7 +51,7 @@ class ShelemEnv(gym.Env):
 
         self.observation_space = spaces.Discrete(52)
         self.action_space = spaces.Tuple((spaces.Discrete(17), spaces.Discrete(52), spaces.Discrete(52),  spaces.Discrete(4), spaces.Discrete(3)))
-
+        from players.PPO import ShelemPolicyDQN
         self.optimization_policy = ShelemPolicyDQN()
         self.game_state = GAMESTATE.READY_TO_START
 
@@ -112,11 +109,7 @@ class ShelemEnv(gym.Env):
             return (GAMESTATE.DECIDE_GAME_MODE, self.game_mode.value), reward, False, {}
         elif self.game_state == GAMESTATE.DECIDE_TRUMP:
             self.decide_trump(action)
-            self.game_state = GAMESTATE.WIDOWING
-            reward = 0
-            return (GAMESTATE.DECIDE_TRUMP, self.hokm_suit.value), reward, False, {}
-        elif self.game_state == GAMESTATE.WIDOWING:
-            self.player_widow_card(action)
+            self.game_state = GAMESTATE.PLAYING_CARDS
             if len(self.hakem.saved_deck) == 4:
                 self.logging.log_hakem_saved_hand(Deck(self.hakem.saved_deck))
                 self.last_hand_winner_id = self.hakem.player_id
@@ -125,6 +118,10 @@ class ShelemEnv(gym.Env):
                 self.round_current_hand = []
                 self.hand_winner_card = None
                 self.game_state = GAMESTATE.PLAYING_CARDS
+            reward = 0
+            return (GAMESTATE.DECIDE_TRUMP, self.hokm_suit.value), reward, False, {}
+        elif self.game_state == GAMESTATE.WIDOWING:
+            self.player_widow_card(action)
             # TODO what should be the reward in here?
             reward = 0
             return (GAMESTATE.WIDOWING, self.game_mode.value), reward, False, {}
@@ -151,7 +148,7 @@ class ShelemEnv(gym.Env):
         for _ in range(self.player_id_receiving_first_hand):
             decks.append(decks.popleft())
         for i in range(4):
-            self.players[i].begin_game(decks[i])
+            self.players[i].begin_round(decks[i])
 
     def get_next_bid(self, action):
         if self.initially_passed_count == 3:
@@ -161,9 +158,9 @@ class ShelemEnv(gym.Env):
         bp = self.betting_players.popleft()
         # TODO implement make bet
         player_bet = bp.make_bet(self.round_bets)
-        p_action, p_bet = self.select_action()
-        p_bet.player_id = bp.player_id
-        print(p_bet)
+        # p_action, p_bet = self.select_action()
+        # p_bet.player_id = bp.player_id
+        # print(p_bet)
         if len(self.round_bets) == 0 or (len(self.round_bets) > 0 and player_bet.bet > self.round_bets[-1].bet):
             self.round_bets.append(player_bet)
             self.betting_players.append(bp)
@@ -172,24 +169,22 @@ class ShelemEnv(gym.Env):
             self.betting_rounds += 1
         return player_bet
 
-    def decide_trump(self, action):
-        self.hokm_suit = self.hakem.decide_trump()
-        self.logging.log_hokm(self.game_mode, self.hokm_suit)
-        for i in range(4):
-            self.players[i].set_hokm_and_game_mode(self.game_mode, self.hokm_suit)
-        p_action, p_trump = self.select_action()
-        print(p_trump)
-
     def decide_game_mode(self, action):
         self.hakem = self.betting_players.popleft()
         self.logging.log_bet(self.round_bets[-1])
         if not self.hakem.game_has_begun:
             raise ValueError("Game has not started yet")
-        self.hakem.is_hakem = True
-        self.hakem.deck += self.round_middle_deck
-        self.game_mode = self.hakem.decide_game_mode()
-        p_action, p_game_mode = self.select_action()
-        print(p_game_mode)
+        self.game_mode = self.hakem.decide_game_mode(self.round_middle_deck)
+        # p_action, p_game_mode = self.select_action()
+        # print(p_game_mode)
+
+    def decide_trump(self, action):
+        self.current_suit = self.hokm_suit = self.hakem.decide_trump()
+        self.logging.log_hokm(self.game_mode, self.hokm_suit)
+        for i in range(4):
+            self.players[i].set_hokm_and_game_mode(self.game_mode, self.hokm_suit)
+        # p_action, p_trump = self.select_action()
+        # print(p_trump)
 
     def player_widow_card(self, action):
         saving_index = self.hakem.decide_widow_card()
@@ -200,25 +195,32 @@ class ShelemEnv(gym.Env):
             else:
                 new_deck += self.hakem.deck[ind]
         self.hakem.deck = new_deck
-        p_action, p_card = self.select_action()
-        print(p_card)
+        # p_action, p_card = self.select_action()
+        # print(p_card)
 
     def play_card(self, action):
-        played_card = self.players[self.hand_next_player_id].play_a_card(self.round_hands_played, self.round_current_hand)
+        played_card = self.players[self.hand_next_player_id].play_a_card(self.round_current_hand, self.current_suit)
         self.round_current_hand.append(played_card)
-        p_action, p_card = self.select_action()
-        print(p_card)
-        if self.hand_winner_card is None or self.hand_winner_card.compare(played_card, self.game_mode, self.hokm_suit) == -1:
+        # p_action, p_card = self.select_action()
+        # print(p_card)
+        print("{}-{}".format(self.hand_next_player_id, played_card))
+        if self.current_suit == SUITS.NOSUIT:
+            self.current_suit = played_card.suit
+        if self.hand_winner_card is None or Card.compare(self.hand_winner_card, played_card, self.game_mode, self.hokm_suit, self.current_suit) < 0:
             self.hand_winner_card = played_card
             self.last_hand_winner_id = self.hand_next_player_id
         self.hand_next_player_id = (self.hand_next_player_id + 1) % 4
         if len(self.round_current_hand) == 4:
+            print("*" * 40)
             self.round_hands_played.append(self.round_current_hand)
             self.logging.add_hand(self.hand_first_player, self.round_current_hand)
-            self.players[self.last_hand_winner_id].store_hand(self.round_current_hand)
+            for p in self.players:
+                p.win_trick(self.round_current_hand, self.last_hand_winner_id)
+            # self.players[self.last_hand_winner_id].store_hand(self.round_current_hand)
             self.hand_first_player = self.last_hand_winner_id
             self.hand_next_player_id = self.last_hand_winner_id
             self.round_current_hand = []
+            self.current_suit = SUITS.NOSUIT
             self.hand_winner_card = None
 
     def end_round(self):
@@ -259,7 +261,12 @@ class ShelemEnv(gym.Env):
         return False
 
     def reset(self):
-        self.set_players([IntelligentPlayer(0, 2), IntelligentPlayer(1, 3), IntelligentPlayer(2, 0), IntelligentPlayer(3, 1)])
+        self.set_players([
+            IntelligentPlayer(0, 2),
+            IntelligentPlayer(1, 3),
+            IntelligentPlayer(2, 0),
+            IntelligentPlayer(3, 1)
+        ])
         for i in range(4):
             self.players[i].init_policies_from_another_policy(self.optimization_policy)
         self.round_counter = 1

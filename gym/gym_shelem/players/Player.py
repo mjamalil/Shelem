@@ -30,7 +30,7 @@ class Player(object):
         self.is_hakem = False
         self.game_has_begun = False
         self.game_mode = GAMEMODE.NORMAL
-        self.hokm_suit = SUITS.NEITHER
+        self.hokm_suit = SUITS.NOSUIT
         self.player_id = player_id
         self.team_mate_player_id = team_mate_player_id
 
@@ -81,7 +81,7 @@ class Player(object):
         elif not hands_played and not current_hand:
             suit = self.hokm_suit
         else:
-            suit = SUITS.NEITHER
+            suit = SUITS.NOSUIT
         return self.deck.pop_random_from_suit(suit)
 
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:

@@ -114,7 +114,7 @@ class Game:
             self.logging.add_hand(first_player, current_hand)
 
             for i in range(NUM_PLAYERS):
-                self.players[i].win_trick(current_hand, last_winner_id, first_player)
+                self.players[i].win_trick(current_hand, last_winner_id)
 
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
 

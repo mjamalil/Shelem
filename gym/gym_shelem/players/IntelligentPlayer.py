@@ -70,7 +70,7 @@ class IntelligentPlayer(Player):
         elif not hands_played and not current_hand:
             suit = self.hokm_suit
         else:
-            suit = SUITS.NEITHER
+            suit = SUITS.NOSUIT
         return self.deck.pop_random_from_suit(suit)
 
     def encode_last_bets(self, all_bets: List[Bet]):

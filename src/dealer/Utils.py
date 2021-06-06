@@ -134,3 +134,11 @@ class colors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+class GAMESTATE(Enum):
+    READY_TO_START = auto()
+    BIDDING = auto()
+    DECIDE_GAME_MODE = auto()
+    DECIDE_TRUMP = auto()
+    WIDOWING = auto()
+    PLAYING_CARDS = auto()

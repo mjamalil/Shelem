@@ -11,7 +11,7 @@ class Logging(object):
         self.hands = []
         self.bet = Bet(0, 0)
         self.game_mode = GAMEMODE.NORMAL
-        self.hokm_suit = SUITS.NEITHER
+        self.hokm_suit = SUITS.NOSUIT
         self.middle_deck = Deck()
         self.saved_hand = Deck()
 

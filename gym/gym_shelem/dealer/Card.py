@@ -81,7 +81,7 @@ class Card(object):
                 else:
                     return -1
             elif game_mode == GAMEMODE.NORMAL:
-                if hokm_suit == SUITS.NEITHER:
+                if hokm_suit == SUITS.NOSUIT:
                     raise ValueError("In normal game mode you cannot have Hokm == Neither")
                 if self.suit == hokm_suit:
                     return 1

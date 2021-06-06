@@ -52,20 +52,24 @@ class Player:
     def card_has_been_played(self, played_card: Card):
         pass
 
-    def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
+    def win_trick(self, hand: List[Card], winner_id: int):
         # calculate reward
         self.trick_number += 1
         if self.player_id == winner_id:
             self.saved_deck += hand
 
-    def make_hakem(self, middle_hand: Deck) -> Tuple[GAMEMODE, SUITS]:
-        """ 
+    def decide_game_mode(self, middle_hand: Deck):
+        self.deck += middle_hand
+        return GAMEMODE.NORMAL
+
+    def decide_trump(self) -> SUITS:
+        """
         :return: Game mode and hokm suit 
         """
         if not self.game_has_begun:
             raise ValueError("Game has not started yet")
         self.is_hakem = True
-        self.deck += middle_hand
+
         new_deck = Deck([])
         discarding_indices, game_mode, hokm_suit = self.discard_cards_from_leader()
         for ind in range(16):
@@ -74,7 +78,7 @@ class Player:
             else:
                 new_deck += self.deck[ind]
         self.deck = new_deck
-        return game_mode, hokm_suit
+        return hokm_suit
 
     def hokm_has_been_determined(self, game_mode: GAMEMODE, hokm_suit: SUITS, bid: Bet):
         self.hakem_bid = bid

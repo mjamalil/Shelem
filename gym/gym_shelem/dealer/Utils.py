@@ -28,7 +28,7 @@ class SUITS(Enum):
     CLUBS = auto()
     HEARTS = auto()
     SPADES = auto()
-    NEITHER = auto()
+    NOSUIT = auto()
 
     @staticmethod
     def from_value(value):

@@ -15,6 +15,7 @@ class BaseIntelligentPlayer(Player):
         self.build_model()
         self.game_state = []
         self.PLAYED_CARD_OFFSET = 16
+        self.agent = False
 
     def init_policies_from_another_policy(self, other_policy):
         pass
@@ -39,6 +40,20 @@ class BaseIntelligentPlayer(Player):
         # TODO: NotImplemented
         return Bet(self.player_id, 120)
 
+    def decide_trump(self) -> SUITS:
+        trump = super().decide_trump()
+        # set new deck
+        for i in range(DECK_SIZE):
+            self.game_state[i] = 0
+        for i in range(len(self.deck.cards)):
+            self.game_state[self.deck.cards[i].id] = 1
+        # set widow cards
+        widow_size = 4
+        for i in range(widow_size):
+            self.game_state[STATE_PLAYED_CARDS_IDX+self.saved_deck[i].id] = 1
+        return trump
+
+    # should be removed
     def make_hakem(self, middle_hand: Deck) -> Tuple[GAMEMODE, SUITS]:
         """
         This is only executed for hakem
@@ -57,14 +72,24 @@ class BaseIntelligentPlayer(Player):
             self.game_state[STATE_PLAYED_CARDS_IDX+self.saved_deck[i].id] = 1
         return result
 
-    def hokm_has_been_determined(self, game_mode: GAMEMODE, hokm_suit: SUITS, bid: Bet):
-        super().hokm_has_been_determined(game_mode, hokm_suit, bid)
+    def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS):
+        super().set_hokm_and_game_mode(game_mode, hokm_suit)
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
+        print(self.hokm_suit)
         self.game_state[STATE_TRUMP_IDX] = hokm_suit/SUITS.NOSUIT
 
     def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
         # Set current suit and trick in game state
+        max_crr_trick_num = 3
+        self.game_state[STATE_SUIT_IDX] = current_suit/SUITS.NOSUIT
+        for i in range(max_crr_trick_num):
+            if i < len(current_hand):
+                self.game_state[STATE_CRR_TRICK_IDX+i] = current_hand[i].id/DECK_SIZE
+            else:
+                self.game_state[STATE_CRR_TRICK_IDX+i] = 1
+
+    def card_has_been_played(self, current_hand: List, current_suit: SUITS):
         max_crr_trick_num = 3
         self.game_state[STATE_SUIT_IDX] = current_suit/SUITS.NOSUIT
         for i in range(max_crr_trick_num):
@@ -124,6 +149,12 @@ class IntelligentPlayer(BaseIntelligentPlayer):
     def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
         super().play_a_card(current_hand, current_suit)
         return self.deck.pop_random_from_suit(current_suit)
+
+class AgentPlayer(BaseIntelligentPlayer):
+
+    def __init__(self, player_id, team_mate_player_id):
+        super().__init__(player_id, team_mate_player_id)
+        self.agent = True
 
 
 class PPOPlayer(BaseIntelligentPlayer):

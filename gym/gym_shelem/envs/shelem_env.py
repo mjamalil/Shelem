@@ -46,10 +46,10 @@ class ShelemEnv(gym.Env):
 
         self.round_hands_played = []
         self.round_current_hand = []
-        self.last_hand_winner_id = 0
+        self.hand_winner = 0
 
         self.hand_first_player = 0
-        self.hand_next_player_id = 0
+        self.current_player = 0
         self.hand_winner_card = None
 
         self.observation_space = spaces.Discrete(52)
@@ -72,7 +72,7 @@ class ShelemEnv(gym.Env):
         elif self.game_state == GAMESTATE.DECIDE_GAME_MODE or self.game_state == GAMESTATE.DECIDE_TRUMP or self.game_state == GAMESTATE.WIDOWING:
             return self.hakem
         elif self.game_state == GAMESTATE.PLAYING_CARDS:
-            return self.players[self.hand_next_player_id]
+            return self.players[self.current_player]
         else:
             raise ValueError("No current player is defined for game state: {}".format(self.game_state))
 
@@ -119,9 +119,9 @@ class ShelemEnv(gym.Env):
             self.player_widow_card(action)
             if len(self.hakem.saved_deck) == 4:
                 self.logging.log_hakem_saved_hand(Deck(self.hakem.saved_deck))
-                self.last_hand_winner_id = self.hakem.player_id
-                self.hand_first_player = self.last_hand_winner_id
-                self.hand_next_player_id = self.last_hand_winner_id
+                self.hand_winner = self.hakem.player_id
+                self.hand_first_player = self.hand_winner
+                self.current_player = self.hand_winner
                 self.round_current_hand = []
                 self.hand_winner_card = None
                 self.game_state = GAMESTATE.PLAYING_CARDS
@@ -204,20 +204,20 @@ class ShelemEnv(gym.Env):
         print(p_card)
 
     def play_card(self, action):
-        played_card = self.players[self.hand_next_player_id].play_a_card(self.round_hands_played, self.round_current_hand)
+        played_card = self.players[self.current_player].play_a_card(self.round_hands_played, self.round_current_hand)
         self.round_current_hand.append(played_card)
         p_action, p_card = self.select_action()
         print(p_card)
         if self.hand_winner_card is None or self.hand_winner_card.compare(played_card, self.game_mode, self.hokm_suit) == -1:
             self.hand_winner_card = played_card
-            self.last_hand_winner_id = self.hand_next_player_id
-        self.hand_next_player_id = (self.hand_next_player_id + 1) % 4
+            self.hand_winner = self.current_player
+        self.current_player = (self.current_player + 1) % 4
         if len(self.round_current_hand) == 4:
             self.round_hands_played.append(self.round_current_hand)
             self.logging.add_hand(self.hand_first_player, self.round_current_hand)
-            self.players[self.last_hand_winner_id].store_hand(self.round_current_hand)
-            self.hand_first_player = self.last_hand_winner_id
-            self.hand_next_player_id = self.last_hand_winner_id
+            self.players[self.hand_winner].store_hand(self.round_current_hand)
+            self.hand_first_player = self.hand_winner
+            self.current_player = self.hand_winner
             self.round_current_hand = []
             self.hand_winner_card = None
 
@@ -278,11 +278,11 @@ class ShelemEnv(gym.Env):
         self.round_middle_deck = None
         del self.round_hands_played[:]
         del self.round_current_hand[:]
-        self.last_hand_winner_id = 0
+        self.hand_winner = 0
         self.game_mode = GAMEMODE.NORMAL
         self.hokm_suit = SUITS.NOSUIT
         self.hand_first_player = 0
-        self.hand_next_player_id = 0
+        self.current_player = 0
         self.hand_winner_card = None
 
     def render(self, mode='human'):

@@ -3,7 +3,7 @@ from typing import Tuple, List
 
 from dealer.Card import Card
 from dealer.Deck import Deck
-from dealer.Utils import GAMEMODE, SUITS
+from dealer.Utils import GAMEMODE, SUITS, InvalidActionError
 
 
 class Bet:
@@ -49,7 +49,7 @@ class Player:
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
 
-    def card_has_been_played(self, played_card: Card):
+    def card_has_been_played(self, current_hand: List, current_suit: SUITS):
         pass
 
     def win_trick(self, hand: List[Card], winner_id: int):
@@ -57,6 +57,16 @@ class Player:
         self.trick_number += 1
         if self.player_id == winner_id:
             self.saved_deck += hand
+
+    def pop_card_from_deck(self, card: int, current_suit: SUITS):
+        try:
+            selected_card = self.deck.get_by_value(card)
+            if self.deck.has_suit(current_suit):
+                if selected_card.suit != current_suit:
+                    raise InvalidActionError
+        except ValueError:
+            raise InvalidActionError
+        return self.deck.pop_card_from_deck(selected_card)
 
     def decide_game_mode(self, middle_hand: Deck):
         self.deck += middle_hand

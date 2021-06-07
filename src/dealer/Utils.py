@@ -142,3 +142,9 @@ class GAMESTATE(Enum):
     DECIDE_TRUMP = auto()
     WIDOWING = auto()
     PLAYING_CARDS = auto()
+
+class ThreeConsecutivePassesException(Exception):
+    pass
+
+class InvalidActionError(Exception):
+    pass

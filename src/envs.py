@@ -1,20 +1,15 @@
 import gym
 from gym import spaces
-# from gym import error, utils
-# from gym.utils import seeding
 from collections import deque
 from typing import List
 
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
-from dealer.Utils import GAMESTATE, GAMEMODE, SUITS
-from players.IntelligentPlayer import IntelligentPlayer
+from dealer.Utils import GAMESTATE, GAMEMODE, SUITS, ThreeConsecutivePassesException
+from players.IntelligentPlayer import IntelligentPlayer, AgentPlayer
 from players.Player import Player
 
-
-class ThreeConsecutivePassesException(Exception):
-    pass
 
 class ShelemEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -43,17 +38,20 @@ class ShelemEnv(gym.Env):
 
         self.round_hands_played = []
         self.round_current_hand = []
-        self.last_hand_winner_id = 0
+        self.hand_winner = 0
 
         self.hand_first_player = 0
-        self.hand_next_player_id = 0
+        self.current_player = 0
         self.hand_winner_card = None
 
         self.observation_space = spaces.Discrete(52)
-        self.action_space = spaces.Tuple((spaces.Discrete(17), spaces.Discrete(52), spaces.Discrete(52),  spaces.Discrete(4), spaces.Discrete(3)))
+        # self.action_space = spaces.Tuple((spaces.Discrete(17), spaces.Discrete(52), spaces.Discrete(52),  spaces.Discrete(4), spaces.Discrete(3)))
+        self.action_space = spaces.Discrete(52) #Box(low=-1.0, high=2.0
         from players.PPO import ShelemPolicyDQN
         self.optimization_policy = ShelemPolicyDQN()
         self.game_state = GAMESTATE.READY_TO_START
+        self.reward = 0
+        self.action_performed = False
 
     def set_players(self, players: List[Player]):
         self.players = players
@@ -69,21 +67,11 @@ class ShelemEnv(gym.Env):
         elif self.game_state == GAMESTATE.DECIDE_GAME_MODE or self.game_state == GAMESTATE.DECIDE_TRUMP or self.game_state == GAMESTATE.WIDOWING:
             return self.hakem
         elif self.game_state == GAMESTATE.PLAYING_CARDS:
-            return self.players[self.hand_next_player_id]
+            return self.players[self.current_player]
         else:
             raise ValueError("No current player is defined for game state: {}".format(self.game_state))
 
     def step(self, action):
-        """assert self.action_space.contains(action)
-        self.path.append(action)
-        done = False
-        if len(self.path) > 10:
-            done = True
-        if sum(self.path) % 2 == 0:  # hit: add a card to players hand and return
-            reward = 0.0
-        else:
-            reward = 1.0
-        return sum(self.path) % 2, reward, done, {}"""
         if self.game_state == GAMESTATE.READY_TO_START:
             self.start_round()
             self.betting_players = deque(self.players)
@@ -101,42 +89,44 @@ class ShelemEnv(gym.Env):
                 self.game_state = GAMESTATE.DECIDE_GAME_MODE
             # TODO what should be the reward in here?
             reward = 0
-            return (GAMESTATE.BIDDING, player_bet.bet), reward, False, {}
+            return self.step(action)
         elif self.game_state == GAMESTATE.DECIDE_GAME_MODE:
             self.decide_game_mode(action)
             self.game_state = GAMESTATE.DECIDE_TRUMP
             reward = 0
-            return (GAMESTATE.DECIDE_GAME_MODE, self.game_mode.value), reward, False, {}
+            return self.step(action)
         elif self.game_state == GAMESTATE.DECIDE_TRUMP:
             self.decide_trump(action)
             self.game_state = GAMESTATE.PLAYING_CARDS
             if len(self.hakem.saved_deck) == 4:
                 self.logging.log_hakem_saved_hand(Deck(self.hakem.saved_deck))
-                self.last_hand_winner_id = self.hakem.player_id
-                self.hand_first_player = self.last_hand_winner_id
-                self.hand_next_player_id = self.last_hand_winner_id
+                self.hand_winner = self.hakem.player_id
+                self.hand_first_player = self.hand_winner
+                self.current_player = self.hand_winner
                 self.round_current_hand = []
                 self.hand_winner_card = None
                 self.game_state = GAMESTATE.PLAYING_CARDS
             reward = 0
-            return (GAMESTATE.DECIDE_TRUMP, self.hokm_suit.value), reward, False, {}
+            return self.step(action)
         elif self.game_state == GAMESTATE.WIDOWING:
             self.player_widow_card(action)
             # TODO what should be the reward in here?
             reward = 0
-            return (GAMESTATE.WIDOWING, self.game_mode.value), reward, False, {}
+            return self.step(action)
         elif self.game_state == GAMESTATE.PLAYING_CARDS:
             if len(self.round_hands_played) < 12:
-                self.play_card(action)
+                done = self.play_card(action)
+                if done:
+                    return self.observation, self.reward, False, []
             else:
-                raise ValueError("There should not be more than 12 hands!")
-            # TODO what should be the reward in here?
-            reward = 0
+                print(self.round_hands_played)
+                raise RuntimeError("There should not be more than 12 hands!")
             if len(self.round_hands_played) == 12:
                 self.end_round()
                 self.game_state = GAMESTATE.READY_TO_START
-                return (GAMESTATE.PLAYING_CARDS, self.game_mode.value), reward, True, {}
-            return (GAMESTATE.PLAYING_CARDS, self.game_mode.value), reward, False, {}
+            return self.step(action)
+            #     return (GAMESTATE.PLAYING_CARDS, self.game_mode.value), self.reward, True, {}
+            # return (GAMESTATE.PLAYING_CARDS, self.game_mode.value), self.reward, False, {}
         else:
             raise ValueError("INVALID state {} in game state machine".format(self.game_state))
 
@@ -199,29 +189,46 @@ class ShelemEnv(gym.Env):
         # print(p_card)
 
     def play_card(self, action):
-        played_card = self.players[self.hand_next_player_id].play_a_card(self.round_current_hand, self.current_suit)
+        if self.players[self.current_player].agent:
+            if self.action_performed:
+                self.action_performed = False
+                self.observation = self.players[self.current_player].game_state
+                return True
+            played_card = self.players[self.current_player].pop_card_from_deck(action, self.current_suit)
+            self.action_performed = True
+            print("{}-{}:Agent".format(self.current_player, played_card))
+        else:
+            played_card = self.players[self.current_player].play_a_card(self.round_current_hand, self.current_suit)
+            print("{}-{}".format(self.current_player, played_card))
         self.round_current_hand.append(played_card)
+        for p in self.players:
+            p.card_has_been_played(self.round_current_hand, self.current_suit)
         # p_action, p_card = self.select_action()
         # print(p_card)
-        print("{}-{}".format(self.hand_next_player_id, played_card))
+
         if self.current_suit == SUITS.NOSUIT:
             self.current_suit = played_card.suit
         if self.hand_winner_card is None or Card.compare(self.hand_winner_card, played_card, self.game_mode, self.hokm_suit, self.current_suit) < 0:
             self.hand_winner_card = played_card
-            self.last_hand_winner_id = self.hand_next_player_id
-        self.hand_next_player_id = (self.hand_next_player_id + 1) % 4
+            self.hand_winner = self.current_player
+        
         if len(self.round_current_hand) == 4:
-            print("*" * 40)
-            self.round_hands_played.append(self.round_current_hand)
-            self.logging.add_hand(self.hand_first_player, self.round_current_hand)
-            for p in self.players:
-                p.win_trick(self.round_current_hand, self.last_hand_winner_id)
-            # self.players[self.last_hand_winner_id].store_hand(self.round_current_hand)
-            self.hand_first_player = self.last_hand_winner_id
-            self.hand_next_player_id = self.last_hand_winner_id
-            self.round_current_hand = []
-            self.current_suit = SUITS.NOSUIT
-            self.hand_winner_card = None
+            self.end_trick()
+            self.current_player = self.hand_winner
+        else:
+            self.current_player = (self.current_player + 1) % 4
+        return False
+
+    def end_trick(self):
+        print("*" * 40)
+        self.round_hands_played.append(self.round_current_hand)
+        self.logging.add_hand(self.hand_first_player, self.round_current_hand)
+        for p in self.players:
+            p.win_trick(self.round_current_hand, self.hand_winner)
+        self.hand_first_player = self.hand_winner
+        self.round_current_hand = []
+        self.current_suit = SUITS.NOSUIT
+        self.hand_winner_card = None
 
     def end_round(self):
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
@@ -252,6 +259,7 @@ class ShelemEnv(gym.Env):
         self.round_counter += 1
         if self.check_game_finished():
             print("Final Scores = Team 1 score = {} and Team 2 score = {}".format(self.team_1_score, self.team_2_score))
+        self.round_hands_played.clear()
 
     def check_game_finished(self):
         if self.team_1_score >= 1165 or self.team_1_score - self.team_2_score >= 1165:
@@ -262,7 +270,7 @@ class ShelemEnv(gym.Env):
 
     def reset(self):
         self.set_players([
-            IntelligentPlayer(0, 2),
+            AgentPlayer(0, 2),
             IntelligentPlayer(1, 3),
             IntelligentPlayer(2, 0),
             IntelligentPlayer(3, 1)
@@ -285,12 +293,13 @@ class ShelemEnv(gym.Env):
         self.round_middle_deck = None
         del self.round_hands_played[:]
         del self.round_current_hand[:]
-        self.last_hand_winner_id = 0
+        self.hand_winner = 0
         self.game_mode = GAMEMODE.NORMAL
         self.hokm_suit = SUITS.NOSUIT
         self.hand_first_player = 0
-        self.hand_next_player_id = 0
+        self.current_player = 0
         self.hand_winner_card = None
+        self.observation = [1,0]
 
     def render(self, mode='human'):
         pass

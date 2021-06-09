@@ -76,18 +76,10 @@ class BaseIntelligentPlayer(Player):
         super().set_hokm_and_game_mode(game_mode, hokm_suit)
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
-        print(self.hokm_suit)
         self.game_state[STATE_TRUMP_IDX] = hokm_suit/SUITS.NOSUIT
 
     def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
-        # Set current suit and trick in game state
-        max_crr_trick_num = 3
-        self.game_state[STATE_SUIT_IDX] = current_suit/SUITS.NOSUIT
-        for i in range(max_crr_trick_num):
-            if i < len(current_hand):
-                self.game_state[STATE_CRR_TRICK_IDX+i] = current_hand[i].id/DECK_SIZE
-            else:
-                self.game_state[STATE_CRR_TRICK_IDX+i] = 1
+        return self.deck.pop_random_from_suit(current_suit)
 
     def card_has_been_played(self, current_hand: List, current_suit: SUITS):
         max_crr_trick_num = 3
@@ -133,6 +125,10 @@ class BaseIntelligentPlayer(Player):
             self.game_state[c.id] = 0
             # add card to played cards
             self.game_state[STATE_PLAYED_CARDS_IDX+c.id] = 1
+        max_crr_trick_num = 3
+        for i in range(max_crr_trick_num):
+            self.game_state[STATE_CRR_TRICK_IDX+i] = 1
+        self.game_state[STATE_SUIT_IDX] = 1.0
 
     def build_model(self):
         pass
@@ -145,10 +141,7 @@ class BaseIntelligentPlayer(Player):
         print("Played Cards", self.game_state[STATE_PLAYED_CARDS_IDX:])
 
 class IntelligentPlayer(BaseIntelligentPlayer):
-
-    def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
-        super().play_a_card(current_hand, current_suit)
-        return self.deck.pop_random_from_suit(current_suit)
+    pass
 
 class AgentPlayer(BaseIntelligentPlayer):
 

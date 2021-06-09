@@ -193,6 +193,7 @@ class ShelemEnv(gym.Env):
             if self.action_performed:
                 self.action_performed = False
                 self.observation = self.players[self.current_player].game_state
+                # self.players[self.current_player].log_game_state()
                 return True
             played_card = self.players[self.current_player].pop_card_from_deck(action, self.current_suit)
             self.action_performed = True
@@ -201,13 +202,11 @@ class ShelemEnv(gym.Env):
             played_card = self.players[self.current_player].play_a_card(self.round_current_hand, self.current_suit)
             print("{}-{}".format(self.current_player, played_card))
         self.round_current_hand.append(played_card)
-        for p in self.players:
-            p.card_has_been_played(self.round_current_hand, self.current_suit)
-        # p_action, p_card = self.select_action()
-        # print(p_card)
-
         if self.current_suit == SUITS.NOSUIT:
             self.current_suit = played_card.suit
+        for p in self.players:
+            p.card_has_been_played(self.round_current_hand, self.current_suit)
+
         if self.hand_winner_card is None or Card.compare(self.hand_winner_card, played_card, self.game_mode, self.hokm_suit, self.current_suit) < 0:
             self.hand_winner_card = played_card
             self.hand_winner = self.current_player

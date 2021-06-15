@@ -14,6 +14,8 @@ from players.Player import Player
 
 
 class ShelemEnv(gym.Env):
+    initialized = False
+
     metadata = {'render.modes': ['human']}
 
     def __init__(self, verbose: bool = False):
@@ -128,6 +130,7 @@ class ShelemEnv(gym.Env):
             if len(self.round_hands_played) == 12:
                 self.end_round()
                 self.game_state = GAMESTATE.READY_TO_START
+                return self.observation, 0, True, {}
             return self.step(action)
             #     return (GAMESTATE.PLAYING_CARDS, self.game_mode.value), self.reward, True, {}
             # return (GAMESTATE.PLAYING_CARDS, self.game_mode.value), self.reward, False, {}
@@ -195,7 +198,6 @@ class ShelemEnv(gym.Env):
     def play_card(self, action):
 
         if self.players[self.current_player].agent:
-            print(action)
             if self.action_performed:
                 self.action_performed = False
                 self.observation = self.players[self.current_player].game_state
@@ -280,6 +282,8 @@ class ShelemEnv(gym.Env):
         return False
 
     def reset(self):
+        if self.initialized:
+            return self.observation
         self.set_players([
             AgentPlayer(0, 2),
             IntelligentPlayer(1, 3),
@@ -312,6 +316,7 @@ class ShelemEnv(gym.Env):
         self.hand_winner_card = None
         # return np.ndarray([1,2,3])
         self.observation = self.players[0].game_state
+        self.initialized = True
         return self.observation
         # return np.array(self.players[0].game_state)
 

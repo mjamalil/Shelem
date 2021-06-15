@@ -70,7 +70,8 @@ class Game:
         self.logging.log_bet(last_bets[-1])
 
         # Leader selecting the trump suit
-        game_mode, hokm_suit = hakem.make_hakem(middle_deck)
+        game_mode = hakem.decide_game_mode(middle_deck)
+        hokm_suit = hakem.decide_trump()
         for i in range(NUM_PLAYERS):
             self.players[i].hokm_has_been_determined(game_mode, hokm_suit, last_bets[-1])
         self.logging.log_hakem_saved_hand(Deck(hakem.saved_deck))
@@ -97,7 +98,7 @@ class Game:
                     raise RuntimeError("Player {} played invalid card {}".format(current_player_id, played_card))
                 print(f"{colors.OKGREEN}{current_player_id}-{played_card}{colors.ENDC}")
                 for j in range(NUM_PLAYERS):
-                    self.players[j].card_has_been_played(played_card)
+                    self.players[j].card_has_been_played(current_hand, current_suit)
 
                 current_hand.append(played_card)
                 if winner_card:

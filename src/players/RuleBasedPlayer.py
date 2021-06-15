@@ -13,8 +13,8 @@ class RuleBasedPlayer(IntelligentPlayer):
         super().begin_round(deck)
         self.played_cards = ([], [], [], [], [])
 
-    def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
-        super().win_trick(hand, winner_id, first_player)
+    def win_trick(self, hand: List[Card], winner_id: int):
+        super().win_trick(hand, winner_id)
         for c in hand:
             self.played_cards[c.suit].append(c.value)
 
@@ -42,7 +42,6 @@ class RuleBasedPlayer(IntelligentPlayer):
         return tuple(saving_hand), self.game_mode, hokm_suit
 
     def play_a_card(self,  current_hand: List, current_suit: SUITS) -> Card:
-        super().play_a_card(current_hand, current_suit)
         turn = len(current_hand)
         # print("*"*40)
         # print(self.deck)

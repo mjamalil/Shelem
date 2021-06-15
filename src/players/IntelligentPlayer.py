@@ -53,25 +53,6 @@ class BaseIntelligentPlayer(Player):
             self.game_state[STATE_PLAYED_CARDS_IDX+self.saved_deck[i].id] = 1
         return trump
 
-    # should be removed
-    def make_hakem(self, middle_hand: Deck) -> Tuple[GAMEMODE, SUITS]:
-        """
-        This is only executed for hakem
-        :return: Game mode and hokm suit
-        """
-        result = super().make_hakem(middle_hand)
-
-        # set new deck
-        for i in range(DECK_SIZE):
-            self.game_state[i] = 0
-        for i in range(len(self.deck.cards)):
-            self.game_state[self.deck.cards[i].id] = 1
-        # set widow cards
-        widow_size = 4
-        for i in range(widow_size):
-            self.game_state[STATE_PLAYED_CARDS_IDX+self.saved_deck[i].id] = 1
-        return result
-
     def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS):
         super().set_hokm_and_game_mode(game_mode, hokm_suit)
         self.game_mode = game_mode
@@ -176,7 +157,6 @@ class PPOPlayer(BaseIntelligentPlayer):
         """
         :return: pops and plays the best available card in the current hand
         """
-        super().play_a_card(current_hand, current_suit)
         invalid_card = True
         invalid_card_reward = -1
         invalid_count = 1

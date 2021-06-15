@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch import Tensor
 from torch.distributions import Categorical
 import numpy as np
 from envs import ShelemEnv
@@ -71,6 +72,31 @@ class ActorCritic(nn.Module):
 
         return action_logprobs, torch.squeeze(state_value), dist_entropy
 
+
+class MaskableActorCritic(ActorCritic):
+
+    def act(self, state, memory, valid_actions):
+        state = torch.from_numpy(state).float().to(device)
+        action_probs = self.action_layer(state)
+        max_action = 0
+        action = -1
+        for i in range(len(action_probs)):
+            action_probs[i] = action_probs[i] * valid_actions[i]
+            if action_probs[i] > max_action:
+                max_action = action_probs[i]
+                action = i
+        # print(action_probs)
+        dist = Categorical(action_probs)
+        action = dist.sample()
+        # print(action)
+
+        memory.states.append(state)
+        memory.actions.append(action)
+        memory.logprobs.append(dist.log_prob(action))
+
+        return action.item()
+
+
 class PPO:
     def __init__(self, state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip):
         self.lr = lr
@@ -78,10 +104,11 @@ class PPO:
         self.gamma = gamma
         self.eps_clip = eps_clip
         self.K_epochs = K_epochs
+        print("using device: {}".format(device))
 
-        self.policy = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
+        self.policy = MaskableActorCritic(state_dim, action_dim, n_latent_var).to(device)
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=lr, betas=betas)
-        self.policy_old = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
+        self.policy_old = MaskableActorCritic(state_dim, action_dim, n_latent_var).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
         self.MseLoss = nn.MSELoss()

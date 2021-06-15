@@ -111,6 +111,22 @@ class BaseIntelligentPlayer(Player):
             self.game_state[STATE_CRR_TRICK_IDX+i] = 1
         self.game_state[STATE_SUIT_IDX] = 1.0
 
+    def get_valid_actions(self, current_suit):
+        valid_actions = DECK_SIZE * [0]
+        valid_action_found = False
+        for c in self.deck.cards:
+            if self.deck.has_suit(current_suit):
+                if c.suit == current_suit:
+                    valid_actions[c.id] = 1
+                    valid_action_found = True
+            else:
+                valid_actions[c.id] = 1
+                valid_action_found = True
+
+        if not valid_action_found:
+            raise RuntimeError("No Valid action found")
+        return valid_actions
+
     def build_model(self):
         pass
 
@@ -169,7 +185,8 @@ class PPOPlayer(BaseIntelligentPlayer):
         # return self.deck.pop_random_from_suit(current_suit)
         while invalid_card:
             try:
-                action = self.request_action(self.game_state)
+                valid_actions = self.get_valid_actions(current_suit)
+                action = self.request_action(self.game_state, valid_actions)
                 selected_card = self.deck.get_by_value(action)
             except ValueError:
                 pass
@@ -180,6 +197,7 @@ class PPOPlayer(BaseIntelligentPlayer):
                 else:
                     invalid_card = False
             if invalid_card:
+                raise RuntimeError("Invalid card")
                 invalid_count += 1
                 self.set_reward(invalid_card_reward, False)
         # print(f"Good card after {invalid_count} tries -> {selected_card.id}")
@@ -196,8 +214,8 @@ class PPOPlayer(BaseIntelligentPlayer):
         self.memory.rewards.append(reward)
         self.memory.is_terminals.append(done)
 
-    def request_action(self, game_state: List):
-        return self.ppo.policy_old.act(np.array(game_state), self.memory)
+    def request_action(self, game_state: List, valid_actions: List):
+        return self.ppo.policy_old.act(np.array(game_state), self.memory, valid_actions)
 
     def begin_round(self, deck: Deck):
         super().begin_round(deck)
@@ -223,7 +241,7 @@ class PPOPlayer(BaseIntelligentPlayer):
             else:
                 reward = 1
         print("reward:{}".format(reward))
-        self.set_reward(self.reward, True)
+        self.set_reward(reward, True)
         self.ppo.update(self.memory)
         self.memory.clear_memory()
         pass
@@ -237,5 +255,4 @@ class PPOPlayer(BaseIntelligentPlayer):
         done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
         print("reward:{}".format(reward))
         if not done:
-        #     self.set_reward(reward, False)
-            self.set_reward(self.reward, False)
+            self.set_reward(reward, False)

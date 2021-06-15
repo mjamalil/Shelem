@@ -114,7 +114,7 @@ class Deck:
         Current build does not build Jokers!
         """
         built_cards = []
-        id = 0
+        id = 0# 0,1,2,3 -> 2s
         for val in VALUES:
             for suit in SUITS:
                 if suit == SUITS.NOSUIT:

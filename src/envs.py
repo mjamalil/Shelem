@@ -1,4 +1,5 @@
 import gym
+import numpy as np
 from gym import spaces
 from collections import deque
 from typing import List
@@ -6,7 +7,8 @@ from typing import List
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
-from dealer.Utils import GAMESTATE, GAMEMODE, SUITS, ThreeConsecutivePassesException
+from dealer.Utils import GAMESTATE, GAMEMODE, SUITS, ThreeConsecutivePassesException, InvalidActionError
+from players.Enum import NUMBER_OF_PARAMS
 from players.IntelligentPlayer import IntelligentPlayer, AgentPlayer
 from players.Player import Player
 
@@ -44,7 +46,9 @@ class ShelemEnv(gym.Env):
         self.current_player = 0
         self.hand_winner_card = None
 
-        self.observation_space = spaces.Discrete(52)
+        # self.observation_space = spaces.Discrete(52)
+        self.observation_space = spaces.Box(low=0.0, high=1.0,  shape=(109,))
+
         # self.action_space = spaces.Tuple((spaces.Discrete(17), spaces.Discrete(52), spaces.Discrete(52),  spaces.Discrete(4), spaces.Discrete(3)))
         self.action_space = spaces.Discrete(52) #Box(low=-1.0, high=2.0
         from players.PPO import ShelemPolicyDQN
@@ -117,7 +121,7 @@ class ShelemEnv(gym.Env):
             if len(self.round_hands_played) < 12:
                 done = self.play_card(action)
                 if done:
-                    return self.observation, self.reward, False, []
+                    return self.observation, self.reward, False, {}
             else:
                 print(self.round_hands_played)
                 raise RuntimeError("There should not be more than 12 hands!")
@@ -189,13 +193,21 @@ class ShelemEnv(gym.Env):
         # print(p_card)
 
     def play_card(self, action):
+
         if self.players[self.current_player].agent:
+            print(action)
             if self.action_performed:
                 self.action_performed = False
                 self.observation = self.players[self.current_player].game_state
-                # self.players[self.current_player].log_game_state()
+                self.players[self.current_player].log_game_state()
+                self.reward = 1
                 return True
-            played_card = self.players[self.current_player].pop_card_from_deck(action, self.current_suit)
+            try:
+                played_card = self.players[self.current_player].pop_card_from_deck(action, self.current_suit)
+            except InvalidActionError:
+                print("Invalid action: {}".format(action))
+                self.reward = -1
+                return True
             self.action_performed = True
             print("{}-{}:Agent".format(self.current_player, played_card))
         else:
@@ -298,7 +310,10 @@ class ShelemEnv(gym.Env):
         self.hand_first_player = 0
         self.current_player = 0
         self.hand_winner_card = None
-        self.observation = [1,0]
+        # return np.ndarray([1,2,3])
+        self.observation = self.players[0].game_state
+        return self.observation
+        # return np.array(self.players[0].game_state)
 
     def render(self, mode='human'):
         pass

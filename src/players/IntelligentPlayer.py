@@ -13,7 +13,7 @@ class BaseIntelligentPlayer(Player):
     def __init__(self, player_id, team_mate_player_id):
         super().__init__(player_id, team_mate_player_id)
         self.build_model()
-        self.game_state = []
+        self.game_state = [NOT_SET] * NUMBER_OF_PARAMS
         self.PLAYED_CARD_OFFSET = 16
         self.agent = False
 
@@ -134,7 +134,12 @@ class BaseIntelligentPlayer(Player):
         pass
 
     def log_game_state(self):
-        print("MyCards", self.game_state[:STATE_TRUMP_IDX])
+        my_cards = []
+        for idx in range(STATE_TRUMP_IDX):
+            for c in self.deck:
+                if idx == c.id and self.game_state[idx] == 1:
+                    my_cards.append(c)
+        print("MyCards", my_cards)
         print("Trump", self.game_state[STATE_TRUMP_IDX])
         print("Current Suit", self.game_state[STATE_SUIT_IDX])
         print("Current Trick", self.game_state[STATE_CRR_TRICK_IDX:STATE_PLAYED_CARDS_IDX])

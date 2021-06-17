@@ -1,5 +1,7 @@
 from typing import Tuple, List
 import numpy as np
+import torch
+
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Utils import GAMEMODE, SUITS, VALUES
@@ -112,20 +114,20 @@ class BaseIntelligentPlayer(Player):
         self.game_state[STATE_SUIT_IDX] = 1.0
 
     def get_valid_actions(self, current_suit):
-        valid_actions = DECK_SIZE * [0]
+        valid_actions = DECK_SIZE * [False]
         valid_action_found = False
         for c in self.deck.cards:
             if self.deck.has_suit(current_suit):
                 if c.suit == current_suit:
-                    valid_actions[c.id] = 1
+                    valid_actions[c.id] = True
                     valid_action_found = True
             else:
-                valid_actions[c.id] = 1
+                valid_actions[c.id] = True
                 valid_action_found = True
 
         if not valid_action_found:
             raise RuntimeError("No Valid action found")
-        return valid_actions
+        return np.array(valid_actions)
 
     def build_model(self):
         pass
@@ -188,8 +190,8 @@ class PPOPlayer(BaseIntelligentPlayer):
                 valid_actions = self.get_valid_actions(current_suit)
                 action = self.request_action(self.game_state, valid_actions)
                 selected_card = self.deck.get_by_value(action)
-            except ValueError:
-                pass
+            except ValueError as err:
+                print(err)
             else:
                 if self.deck.has_suit(current_suit):
                     if selected_card.suit == current_suit:
@@ -197,20 +199,18 @@ class PPOPlayer(BaseIntelligentPlayer):
                 else:
                     invalid_card = False
             if invalid_card:
-                raise RuntimeError("Invalid card")
+                raise RuntimeError("invalid action")
                 invalid_count += 1
                 self.set_reward(invalid_card_reward, False)
-        # print(f"Good card after {invalid_count} tries -> {selected_card.id}")
-        if self.game_state[selected_card.id] == 0:
-            raise ValueError("can't find selected card: {}".format(selected_card.id))
-        if selected_card.value == VALUES.Ace:
-            self.reward = 1
-        else:
-            self.reward = -1
-
+        # if action >= 50:
+        #     self.reward = 1
+        # else:
+        #     self.reward = -1
+        # return self.deck.pop_random_from_suit(current_suit)
         return self.deck.pop_card_from_deck(selected_card)
 
     def set_reward(self, reward: float, done: bool):
+        print("reward: {}".format(reward))
         self.memory.rewards.append(reward)
         self.memory.is_terminals.append(done)
 

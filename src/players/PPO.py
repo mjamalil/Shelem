@@ -1,8 +1,8 @@
+import numpy as np
 import torch
 import torch.nn as nn
-from torch import Tensor
 from torch.distributions import Categorical
-import numpy as np
+
 from envs import ShelemEnv
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -78,17 +78,12 @@ class MaskableActorCritic(ActorCritic):
     def act(self, state, memory, valid_actions):
         state = torch.from_numpy(state).float().to(device)
         action_probs = self.action_layer(state)
-        max_action = 0
-        action = -1
-        for i in range(len(action_probs)):
-            action_probs[i] = action_probs[i] * valid_actions[i]
-            if action_probs[i] > max_action:
-                max_action = action_probs[i]
-                action = i
-        # print(action_probs)
-        dist = Categorical(action_probs)
+        # mask actions
+        new_probs = torch.tensor(52 * [0.0])
+        new_probs.masked_scatter_(torch.from_numpy(valid_actions), action_probs)
+        print(new_probs)
+        dist = Categorical(new_probs)
         action = dist.sample()
-        # print(action)
 
         memory.states.append(state)
         memory.actions.append(action)

@@ -215,10 +215,16 @@ class PPOPlayer(BaseIntelligentPlayer):
         self.memory.is_terminals.append(done)
 
     def request_action(self, game_state: List, valid_actions: List):
-        return self.ppo.policy_old.act(np.array(game_state), self.memory, valid_actions)
+        action = self.ppo.policy_old.act(np.array(game_state), self.memory, valid_actions)
+        for idx, a in enumerate(self.ppo.policy_old.new_probs):
+            if a.item() != 0.0:
+                selected_card = self.deck.get_by_value(idx)
+                print("{} ->{: .2f}".format(selected_card, a.item() * 100))
+        return action
 
     def begin_round(self, deck: Deck):
         super().begin_round(deck)
+        print(deck)
         self.reward = 0
 
     def end_round(self, team1_score: int, team2_score: int):
@@ -240,7 +246,6 @@ class PPOPlayer(BaseIntelligentPlayer):
                 reward = -1
             else:
                 reward = 1
-        print("reward:{}".format(reward))
         self.set_reward(reward, True)
         self.ppo.update(self.memory)
         self.memory.clear_memory()
@@ -253,6 +258,5 @@ class PPOPlayer(BaseIntelligentPlayer):
         else:
             reward = -Deck(hand).get_deck_score() / self.hakem_bid.bet_score
         done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
-        print("reward:{}".format(reward))
         if not done:
             self.set_reward(reward, False)

@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.distributions import Categorical
 
 from envs import ShelemEnv
+from players.Enum import DECK_SIZE
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -79,10 +80,10 @@ class MaskableActorCritic(ActorCritic):
         state = torch.from_numpy(state).float().to(device)
         action_probs = self.action_layer(state)
         # mask actions
-        new_probs = torch.tensor(52 * [0.0])
-        new_probs.masked_scatter_(torch.from_numpy(valid_actions), action_probs)
-        print(new_probs)
-        dist = Categorical(new_probs)
+        self.new_probs = torch.tensor(DECK_SIZE * [0.0])
+        self.new_probs.masked_scatter_(torch.from_numpy(valid_actions), action_probs)
+        # print(self.new_probs)
+        dist = Categorical(self.new_probs)
         action = dist.sample()
 
         memory.states.append(state)

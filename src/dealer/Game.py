@@ -96,7 +96,10 @@ class Game:
                 valid_card = self.check_card_validity(self.players[current_player_id], played_card, current_suit)
                 if not valid_card:
                     raise RuntimeError("Player {} played invalid card {}".format(current_player_id, played_card))
-                print(f"{colors.OKGREEN}{current_player_id}-{played_card}{colors.ENDC}")
+                if played_card.suit == hokm_suit:
+                    print(f"{colors.FAIL}Player{current_player_id}-> {played_card}{colors.ENDC}")
+                else:
+                    print(f"{colors.OKGREEN}Player{current_player_id}-> {played_card}{colors.ENDC}")
                 for j in range(NUM_PLAYERS):
                     self.players[j].card_has_been_played(current_hand, current_suit)
 

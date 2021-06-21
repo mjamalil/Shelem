@@ -1,5 +1,5 @@
 from unicards import unicard
-from dealer.Utils import SUITS, GAMEMODE, VALUES
+from dealer.Utils import SUITS, GAMEMODE, VALUES, NORMAL_RANKS
 
 
 class Card:
@@ -87,3 +87,9 @@ class Card:
         else:
             return "%s%s" % (value.value.name[0], suit.name[0])
 
+    @staticmethod
+    def description(value):
+        suit = (SUITS)(value % 4 + 1)
+        values = {v: k for k, v in NORMAL_RANKS.items()}
+        value = value // 4
+        return "{} of {}".format(values[value+1], suit.name)

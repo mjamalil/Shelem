@@ -216,6 +216,8 @@ class PPOPlayer(BaseIntelligentPlayer):
 
     def request_action(self, game_state: List, valid_actions: List):
         action = self.ppo.policy_old.act(np.array(game_state), self.memory, valid_actions)
+        idx = torch.argmax(self.ppo.policy_old.action_probs)
+        print("ideal card: {}".format(Card.description(idx.item())))
         for idx, a in enumerate(self.ppo.policy_old.new_probs):
             if a.item() != 0.0:
                 selected_card = self.deck.get_by_value(idx)

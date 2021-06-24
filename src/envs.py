@@ -7,8 +7,8 @@ from typing import List
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
-from dealer.Utils import GAMESTATE, GAMEMODE, SUITS, ThreeConsecutivePassesException, InvalidActionError
-from players.Enum import NUMBER_OF_PARAMS, ACTION_SIZE, DECK_SIZE, NUM_PLAYERS
+from dealer.Utils import ThreeConsecutivePassesException, InvalidActionError
+from players.Enum import NUMBER_OF_PARAMS, ACTION_SIZE, NUM_PLAYERS, GAMESTATE, SUITS, GAMEMODE
 from players.IntelligentPlayer import IntelligentPlayer, AgentPlayer
 from players.Player import Player
 

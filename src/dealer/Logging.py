@@ -2,7 +2,7 @@ from typing import List
 
 from dealer.Card import Card
 from dealer.Deck import Hand, Deck
-from dealer.Utils import GAMEMODE, SUITS
+from players.Enum import GAMEMODE, SUITS
 from players.Player import Bet
 
 

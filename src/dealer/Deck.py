@@ -3,7 +3,7 @@ from typing import List, Tuple, Any
 
 from dealer import Utils
 from dealer.Card import Card
-from dealer.Utils import SUITS, VALUES
+from players.Enum import SUITS, VALUES
 
 
 def split(a, n):
@@ -70,9 +70,9 @@ class Deck:
         number_of_hands = len(self._cards) // 4
         score = number_of_hands * 5
         for card in self._cards:
-            if card.value == Utils.VALUES.Ace or card.value == Utils.VALUES.Ten:
+            if card.value == VALUES.Ace or card.value == VALUES.Ten:
                 score += 10
-            elif card.value == Utils.VALUES.Five:
+            elif card.value == VALUES.Five:
                 score += 5
         return score
 

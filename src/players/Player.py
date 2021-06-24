@@ -3,7 +3,8 @@ from typing import Tuple, List
 
 from dealer.Card import Card
 from dealer.Deck import Deck
-from dealer.Utils import GAMEMODE, SUITS, InvalidActionError
+from dealer.Utils import InvalidActionError
+from players.Enum import GAMEMODE, SUITS
 
 
 class Bet:

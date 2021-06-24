@@ -1,5 +1,6 @@
 from unicards import unicard
-from dealer.Utils import SUITS, GAMEMODE, VALUES, NORMAL_RANKS
+
+from players.Enum import VALUES, SUITS, GAMEMODE, NORMAL_RANKS
 
 
 class Card:

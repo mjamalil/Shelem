@@ -4,8 +4,7 @@ from typing import Tuple, List
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
-from dealer.Utils import SUITS, colors
-from players.Enum import NUM_PLAYERS
+from players.Enum import NUM_PLAYERS, SUITS, colors
 from players.IntelligentPlayer import PPOPlayer
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer

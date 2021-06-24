@@ -248,7 +248,7 @@ from typing import List
 
 from dealer.Card import Card
 from dealer.Deck import Deck
-from dealer.Utils import GAMESTATE, VALUES, GAMEMODE, SUITS
+from players.Enum import GAMESTATE, VALUES, GAMEMODE, SUITS
 from players.Player import Bet
 
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))

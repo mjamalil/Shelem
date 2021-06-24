@@ -3,7 +3,6 @@ from collections import Counter
 
 from dealer.Card import Card
 from dealer.Deck import Deck
-from dealer.Utils import GAMEMODE, SUITS, VALUES
 from players.IntelligentPlayer import IntelligentPlayer
 from players.Enum import *
 

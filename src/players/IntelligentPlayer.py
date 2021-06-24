@@ -4,7 +4,6 @@ import torch
 
 from dealer.Card import Card
 from dealer.Deck import Deck
-from dealer.Utils import GAMEMODE, SUITS, VALUES
 from players.Player import Player, Bet
 from players.Enum import *
 

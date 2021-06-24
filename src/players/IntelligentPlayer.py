@@ -19,6 +19,13 @@ class BaseIntelligentPlayer(Player):
         self.PLAYED_CARD_OFFSET = 16
         self.agent = False
 
+    @property
+    def action_mask(self):
+        valid_actions = ACTION_SIZE*[False]
+        for c in self.deck:
+            valid_actions[c.id] = True
+        return valid_actions
+
     def init_policies_from_another_policy(self, other_policy):
         pass
 
@@ -221,7 +228,7 @@ class PPOPlayer(BaseIntelligentPlayer):
         for idx, a in enumerate(self.ppo.policy_old.new_probs):
             if a.item() != 0.0:
                 selected_card = self.deck.get_by_value(idx)
-                print("{} ->{: .2f}".format(selected_card, a.item() * 100))
+                print("{} ->{: .2f}%".format(selected_card, a.item() * 100))
         return action
 
     def begin_round(self, deck: Deck):

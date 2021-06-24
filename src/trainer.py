@@ -1,7 +1,6 @@
 import gym
-
-from dealer.Utils import InvalidActionError
-
+from stable_baselines3.common.vec_env.wrappers import VecActionMasker
+from stable_baselines3.ppo import MlpPolicy
 
 # env = gym.make('src:shelem-v0')
 # observation = env.reset()
@@ -42,7 +41,7 @@ from dealer.Utils import InvalidActionError
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
-
+from stable_baselines3.common import policies
 
 # env = gym.make("Pendulum-v0")
 
@@ -53,8 +52,10 @@ from stable_baselines3.common.env_util import make_vec_env
 # del model # remove to demonstrate saving and loading
 #
 # model = SAC.load("sac_pendulum")
+def mask_function(env):
+    return env.action_mask()
 env = make_vec_env('src:shelem-v0', n_envs=1)
-model = PPO("MlpPolicy", env, verbose=1)
+model = PPO(MlpPolicy, env, verbose=2, action_mask_fn=mask_function)
 model.learn(total_timesteps=int(2e5))
 # print(env.observation_space.sample())
 obs = env.reset()

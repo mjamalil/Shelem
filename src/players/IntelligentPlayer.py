@@ -1,6 +1,7 @@
 from typing import Tuple, List
 import numpy as np
 import torch
+from numpy import ndarray
 
 from dealer.Card import Card
 from dealer.Deck import Deck
@@ -182,15 +183,8 @@ class PPOPlayer(BaseIntelligentPlayer):
         :return: pops and plays the best available card in the current hand
         """
         invalid_card = True
-        invalid_card_reward = -1
+        invalid_card_reward = -45 / self.hakem_bid.bet_score
         invalid_count = 1
-        # action = self.request_action(self.game_state)
-        # print(action)
-        # if action == 25:
-        #     self.set_reward(1, True)
-        # else:
-        #     self.set_reward(-1, True)
-        # return self.deck.pop_random_from_suit(current_suit)
         while invalid_card:
             try:
                 valid_actions = self.get_valid_actions(current_suit)
@@ -205,7 +199,7 @@ class PPOPlayer(BaseIntelligentPlayer):
                 else:
                     invalid_card = False
             if invalid_card:
-                raise RuntimeError("invalid action")
+                # raise RuntimeError("invalid action")
                 invalid_count += 1
                 self.set_reward(invalid_card_reward, False)
         # if action >= 50:
@@ -220,14 +214,14 @@ class PPOPlayer(BaseIntelligentPlayer):
         self.memory.rewards.append(reward)
         self.memory.is_terminals.append(done)
 
-    def request_action(self, game_state: List, valid_actions: List):
-        action = self.ppo.policy_old.act(np.array(game_state), self.memory, valid_actions)
-        idx = torch.argmax(self.ppo.policy_old.action_probs)
-        print("ideal card: {}".format(Card.description(idx.item())))
-        for idx, a in enumerate(self.ppo.policy_old.new_probs):
-            if a.item() != 0.0:
-                selected_card = self.deck.get_by_value(idx)
-                print("{} ->{: .2f}%".format(selected_card, a.item() * 100))
+    def request_action(self, game_state: List, valid_actions: ndarray):
+        action = self.ppo.policy_old.act(np.array(game_state), self.memory)
+        # idx = torch.argmax(self.ppo.policy_old.action_probs)
+        # print("ideal card: {}".format(Card.description(idx.item())))
+        # for idx, a in enumerate(self.ppo.policy_old.new_probs):
+        #     if a.item() != 0.0:
+        #         selected_card = self.deck.get_by_value(idx)
+        #         print("{} ->{: .2f}%".format(selected_card, a.item() * 100))
         return action
 
     def begin_round(self, deck: Deck):

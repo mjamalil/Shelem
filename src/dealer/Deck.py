@@ -91,7 +91,7 @@ class Deck:
         for card in self._cards:
             if card.id == value:
                 return card
-        raise ValueError("Card with this value not found in my deck")
+        raise ValueError("Card {} not found in my deck".format(value))
 
     def has_suit(self, suit: SUITS):
         for card in self._cards:

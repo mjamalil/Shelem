@@ -11,6 +11,7 @@ from players.RuleBasedPlayer import RuleBasedPlayer
 
 training = True
 benchmark_rounds = 1000
+
 class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):

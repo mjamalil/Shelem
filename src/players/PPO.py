@@ -80,7 +80,7 @@ class MaskableActorCritic(ActorCritic):
         state = torch.from_numpy(state).float().to(device)
         self.action_probs = self.action_layer(state)
         # mask actions
-        print(self.action_probs)
+        # print(self.action_probs)
         self.new_probs = torch.tensor(DECK_SIZE * [0.0])
         self.new_probs.masked_scatter_(torch.from_numpy(valid_actions), self.action_probs)
         # print(self.new_probs)

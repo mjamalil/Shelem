@@ -16,6 +16,7 @@ class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):
         self.game_end = 1165
+        self.limit_game_number = 1100
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0
@@ -149,23 +150,32 @@ class Game:
         else:
             result = team1_score, -2 * final_bet.bet
         for i in range(4):
-            self.players[i].end_round(*result)
+            self.players[i].end_round(self.hakem_id, team1_score, team2_score)
         return result
 
     def begin_game(self):
-        round_counter = 1
+        self.round_counter = 1
         while not self.check_game_finished():
             s1, s2 = self.play_a_round()
-            if not training or round_counter > benchmark_rounds:
+            if not training or self.round_counter > benchmark_rounds:
                 self.team_1_score += s1
                 self.team_2_score += s2
             print("{}Round {:04d}: H:{} Team 1 score = {:04d} ({:04d}) and Team 2 score = {:04d} ({:04d}){}".format(
-                colors.WARNING, round_counter, self.hakem_id, s1, self.team_1_score, s2, self.team_2_score, colors.ENDC))
-            round_counter += 1
+                colors.WARNING, self.round_counter, self.hakem_id, s1, self.team_1_score, s2, self.team_2_score, colors.ENDC))
+            self.round_counter += 1
+        self.finish_game()
+
+    def finish_game(self):
+        print("*" * 100)
         print("{}Final Scores = Team 1 score = {} and Team 2 score = {}{}".format(
             colors.OKCYAN, self.team_1_score, self.team_2_score, colors.ENDC))
+        self.players[0].print_game_stat()
 
     def check_game_finished(self):
+        if self.limit_game_number > 0:
+            if self.round_counter > self.limit_game_number:
+                return True
+            return False
         if self.team_1_score >= self.game_end or self.team_1_score - self.team_2_score >= self.game_end:
             return True
         elif self.team_2_score >= self.game_end or self.team_2_score - self.team_1_score >= self.game_end:

@@ -51,6 +51,8 @@ class ShelemEnv(gym.Env):
         # self.observation_space = spaces.Discrete(52)
         self.observation_space = spaces.Box(low=0.0, high=1.0,  shape=(NUMBER_OF_PARAMS,))
         self.action_space = spaces.Discrete(ACTION_SIZE)
+        self.reward_range = (-1, 1)
+
         from players.PPO import ShelemPolicyDQN
         self.optimization_policy = ShelemPolicyDQN()
         self.game_state = GAMESTATE.READY_TO_START
@@ -242,10 +244,10 @@ class ShelemEnv(gym.Env):
         self.logging.add_hand(self.hand_first_player, self.round_current_hand)
         for p in self.players:
             p.win_trick(self.round_current_hand, self.hand_winner)
-        if self.hand_winner in [0,2]:
-            self.reward = Deck(self.round_current_hand).get_deck_score() / self.round_bets[-1].bet
+        if self.hand_winner in [0, 2]:
+            self.reward = Deck(self.round_current_hand).get_deck_score() / 165
         else:
-            self.reward = -Deck(self.round_current_hand).get_deck_score() / self.round_bets[-1].bet
+            self.reward = 0
         self.hand_first_player = self.hand_winner
         self.round_current_hand = []
         self.current_suit = SUITS.NOSUIT
@@ -255,12 +257,15 @@ class ShelemEnv(gym.Env):
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % NUM_PLAYERS
         self.team_1_round_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         self.team_2_round_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
-        self.french_deck = self.players[0].saved_deck + self.players[2].saved_deck + self.players[1].saved_deck + self.players[3].saved_deck
+        self.reward = self.get_round_reward(self.hakem, self.team_1_round_score, self.team_2_round_score, self.reward)
+        self.french_deck = self.players[0].saved_deck + self.players[2].saved_deck + \
+                           self.players[1].saved_deck + self.players[3].saved_deck
         final_bet = self.round_bets[-1]
         team1_has_bet = final_bet.id == 0 or final_bet.id == 2
         if self.verbose:
             self.logging.log()
-        if (team1_has_bet and self.team_1_round_score >= final_bet.bet) or (not team1_has_bet and self.team_2_round_score >= final_bet.bet):
+        if (team1_has_bet and self.team_1_round_score >= final_bet.bet) or \
+                (not team1_has_bet and self.team_2_round_score >= final_bet.bet):
             if team1_has_bet:
                 s1, s2 = final_bet.bet, self.team_2_round_score
             else:
@@ -333,3 +338,31 @@ class ShelemEnv(gym.Env):
 
     def close(self):
         del self.players[:]
+
+    def get_round_reward(self, hakem_id: int, team1_score: int, team2_score: int, last_reward):
+        if hakem_id in [0, 2]:
+            if team1_score == 165:
+                round_reward = 1.0
+            elif team1_score >= self.round_bets[-1].bet:
+                round_reward = 0.5
+            elif team1_score > 80:
+                round_reward = -0.7
+            else:
+                round_reward = -1.0
+        else:
+            if team2_score == 165:
+                round_reward = 0.0
+            elif team2_score >= self.round_bets[-1].bet:
+                round_reward = 0.0
+            elif team2_score > 80:
+                round_reward = 0.5
+            else:
+                round_reward = 1.0
+
+        round_reward += last_reward
+        print(round_reward)
+        if round_reward > 1.0:
+            round_reward = 1.0
+        elif round_reward < -1.0:
+            round_reward = -1.0
+        return round_reward

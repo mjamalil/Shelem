@@ -4,7 +4,7 @@ from typing import Tuple, List
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Utils import InvalidActionError
-from players.Enum import GAMEMODE, SUITS
+from players.Enum import GAMEMODE, SUITS, colors
 
 
 class Bet:
@@ -36,6 +36,15 @@ class Player:
         self.team_mate_player_id = team_mate_player_id
         self.trick_number = 0
         self.hakem_bid = 0
+        # stat variables
+        self.nl_double = 0
+        self.l_shelem = 0
+        self.nl_success = 0
+        self.l_success = 0
+        self.nl_fail = 0
+        self.l_fail = 0
+        self.nl_shelem = 0
+        self.l_double = 0
 
     def begin_round(self, deck: Deck):
         self.deck = deck
@@ -43,8 +52,25 @@ class Player:
         self.saved_deck = Deck()
         self.trick_number = 0
 
-    def end_round(self, team1_score: int, team2_score: int):
-        pass
+    def end_round(self, hakem_id: int, team1_score: int, team2_score: int):
+        if hakem_id in [self.player_id, self.team_mate_player_id]:
+            if team2_score == 0:
+                self.l_shelem += 1
+            elif team1_score >= self.hakem_bid.bet_score:
+                self.l_success += 1
+            elif team1_score > 80:
+                self.l_fail += 1
+            else:
+                self.l_double += 1
+        else:
+            if team1_score == 0:
+                self.nl_shelem += 1
+            elif team2_score >= self.hakem_bid.bet_score:
+                self.nl_fail += 1
+            elif team2_score > 80:
+                self.nl_success += 1
+            else:
+                self.nl_double += 1
 
     def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS):
         self.game_mode = game_mode
@@ -129,3 +155,15 @@ class Player:
         :return: 
         """
         return random.sample(range(16), 4), self.game_mode, self.deck.cards[0].suit
+
+    def print_game_stat(self):
+        print()
+        print(f"{colors.OKGREEN}Non-Leader Double:\t{self.nl_double}{colors.ENDC}")
+        print(f"{colors.OKGREEN}Leader Shelem:\t{self.l_shelem}{colors.ENDC}")
+        print(f"{colors.OKGREEN}Non-Leader Success:\t{self.nl_success}{colors.ENDC}")
+        print(f"{colors.OKGREEN}Leader Success:\t{self.l_success}{colors.ENDC}")
+        print("--------------------")
+        print(f"{colors.FAIL}Non-Leader fail:\t{self.nl_fail}{colors.ENDC}")
+        print(f"{colors.FAIL}Leader fail:\t{self.l_fail}{colors.ENDC}")
+        print(f"{colors.FAIL}Non-Leader Shelem:\t{self.nl_shelem}{colors.ENDC}")
+        print(f"{colors.FAIL}Leader Double:\t{self.l_double}{colors.ENDC}")

@@ -10,13 +10,13 @@ from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
 
 training = True
-benchmark_rounds = 1000
+benchmark_rounds = 100000
 
 class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):
         self.game_end = 1165
-        self.limit_game_number = 1100
+        self.limit_game_number = 0
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0

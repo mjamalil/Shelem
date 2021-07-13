@@ -1,5 +1,3 @@
-import gym
-import numpy as np
 from gym import spaces
 from collections import deque
 from typing import List
@@ -13,7 +11,7 @@ from players.IntelligentPlayer import IntelligentPlayer, AgentPlayer
 from players.Player import Player
 
 
-class ShelemEnv(gym.Env):
+class ShelemGame:
     initialized = False
 
     metadata = {'render.modes': ['human']}
@@ -56,13 +54,12 @@ class ShelemEnv(gym.Env):
         from players.PPO import ShelemPolicyDQN
         self.optimization_policy = ShelemPolicyDQN()
         self.game_state = GAMESTATE.READY_TO_START
-        self.reward = 0
+        self.rewards = [0] * NUM_PLAYERS
         self.action_performed = False
         self.num_envs = 1
 
-    def action_mask(self):
-        raise NotImplementedError
-        return self.players[0].action_mask
+    def init_game(self):
+        return self.reset()
 
     def set_players(self, players: List[Player]):
         self.players = players
@@ -82,7 +79,7 @@ class ShelemEnv(gym.Env):
         else:
             raise ValueError("No current player is defined for game state: {}".format(self.game_state))
 
-    def step(self, action):
+    def step(self, action=None):
         if self.game_state == GAMESTATE.READY_TO_START:
             self.start_round()
             self.betting_players = deque(self.players)
@@ -121,23 +118,21 @@ class ShelemEnv(gym.Env):
             return self.step(action)
         elif self.game_state == GAMESTATE.WIDOWING:
             self.player_widow_card(action)
-            # TODO what should be the reward in here?
             reward = 0
             return self.step(action)
         elif self.game_state == GAMESTATE.PLAYING_CARDS:
+            if action is None:
+                return self.players[self.current_player].game_state, self.current_player
             if len(self.round_hands_played) < 12:
-                done = self.play_card(action)
-                if done:
-                    print("reward:{}".format(self.reward))
-                    return self.observation, self.reward, False, {}
+                state, current_player = self.play_card(action)
             else:
                 print(self.round_hands_played)
                 raise RuntimeError("There should not be more than 12 hands!")
             if len(self.round_hands_played) == 12:
                 self.end_round()
                 self.game_state = GAMESTATE.READY_TO_START
-                return self.observation, 0, True, {}
-            return self.step(action)
+                return self.step()
+            return state, current_player
         else:
             raise ValueError("INVALID state {} in game state machine".format(self.game_state))
 
@@ -200,21 +195,14 @@ class ShelemEnv(gym.Env):
         # print(p_card)
 
     def play_card(self, action):
-
         if self.players[self.current_player].agent:
-            if self.action_performed:
-                self.action_performed = False
-                self.observation = self.players[self.current_player].game_state
-                self.players[self.current_player].log_game_state()
-                # self.reward = 1
-                return True
+            self.observation = self.players[self.current_player].game_state
+            self.players[self.current_player].log_game_state()
             try:
                 played_card = self.players[self.current_player].pop_card_from_deck(action, self.current_suit)
             except InvalidActionError:
                 print("Invalid action: {}".format(action))
-                self.reward = -1
-                return True
-            self.action_performed = True
+                raise RuntimeError("invalid actiuon")
             print("{}-{}:Agent".format(self.current_player, played_card))
         else:
             played_card = self.players[self.current_player].play_a_card(self.round_current_hand, self.current_suit)
@@ -228,13 +216,13 @@ class ShelemEnv(gym.Env):
         if self.hand_winner_card is None or Card.compare(self.hand_winner_card, played_card, self.game_mode, self.hokm_suit, self.current_suit) < 0:
             self.hand_winner_card = played_card
             self.hand_winner = self.current_player
-        
+
         if len(self.round_current_hand) == NUM_PLAYERS:
             self.end_trick()
             self.current_player = self.hand_winner
         else:
             self.current_player = (self.current_player + 1) % NUM_PLAYERS
-        return False
+        return self.players[self.current_player].game_state, self.current_player
 
     def end_trick(self):
         print("*" * 40)
@@ -243,9 +231,9 @@ class ShelemEnv(gym.Env):
         for p in self.players:
             p.win_trick(self.round_current_hand, self.hand_winner)
         if self.hand_winner in [0, 2]:
-            self.reward = Deck(self.round_current_hand).get_deck_score() / 165
+            self.rewards[0] = Deck(self.round_current_hand).get_deck_score() / 165
         else:
-            self.reward = 0
+            self.rewards[0] = 0
         self.hand_first_player = self.hand_winner
         self.round_current_hand = []
         self.current_suit = SUITS.NOSUIT
@@ -255,7 +243,7 @@ class ShelemEnv(gym.Env):
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % NUM_PLAYERS
         self.team_1_round_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         self.team_2_round_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
-        self.reward = self.get_round_reward(self.hakem, self.team_1_round_score, self.team_2_round_score, self.reward)
+        self.rewards[0] = self.get_round_reward(self.hakem, self.team_1_round_score, self.team_2_round_score, 0)
         self.french_deck = self.players[0].saved_deck + self.players[2].saved_deck + \
                            self.players[1].saved_deck + self.players[3].saved_deck
         final_bet = self.round_bets[-1]
@@ -325,17 +313,8 @@ class ShelemEnv(gym.Env):
         self.hand_first_player = 0
         self.current_player = 0
         self.hand_winner_card = None
-        # return np.ndarray([1,2,3])
-        self.observation = self.players[0].game_state
         self.initialized = True
-        return self.observation
-        # return np.array(self.players[0].game_state)
-
-    def render(self, mode='human'):
-        pass
-
-    def close(self):
-        del self.players[:]
+        return self.players[self.current_player].game_state, self.current_player
 
     def get_round_reward(self, hakem_id: int, team1_score: int, team2_score: int, last_reward):
         if hakem_id in [0, 2]:
@@ -364,3 +343,56 @@ class ShelemEnv(gym.Env):
         elif round_reward < -1.0:
             round_reward = -1.0
         return round_reward
+
+    def get_state(self, player_id):
+        """ Return player's state
+        Args:
+            player_id (int): player id
+        Returns:
+            (dict): The state of the player
+        """
+        return self.players[self.current_player].game_state
+
+    def get_payoffs(self):
+        """ Return the payoffs of the game
+        Returns:
+            (list): Each entry corresponds to the payoff of one player
+        """
+        return self.rewards
+
+    def get_legal_actions(self):
+        """ Return the legal actions for current player
+        Returns:
+            (list): A list of legal actions
+        """
+
+        return self.players[self.current_player].get_legal_actions(self.current_suit)
+
+    def get_num_players(self):
+        """ Return the number of players in Limit Texas Hold'em
+        Returns:
+            (int): The number of players in the game
+        """
+        return NUM_PLAYERS
+
+    @staticmethod
+    def get_num_actions():
+        """ Return the number of applicable actions
+        Returns:
+            (int): The number of actions. There are 61 actions
+        """
+        return 52
+
+    def get_player_id(self):
+        """ Return the current player's id
+        Returns:
+            (int): current player's id
+        """
+        return self.current_player
+
+    def is_over(self):
+        """ Check if the game is over
+        Returns:
+            (boolean): True if the game is over
+        """
+        return False

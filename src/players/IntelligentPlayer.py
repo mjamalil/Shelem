@@ -133,6 +133,22 @@ class BaseIntelligentPlayer(Player):
             raise RuntimeError("No Valid action found")
         return np.array(valid_actions)
 
+    def get_legal_actions(self, current_suit):
+        valid_actions = []
+        valid_action_found = False
+        for c in self.deck.cards:
+            if self.deck.has_suit(current_suit):
+                if c.suit == current_suit:
+                    valid_actions.append(c.id)
+                    valid_action_found = True
+            else:
+                valid_actions.append(c.id)
+                valid_action_found = True
+
+        if not valid_action_found:
+            raise RuntimeError("No Valid action found")
+        return valid_actions
+
     def build_model(self):
         pass
 
@@ -217,8 +233,8 @@ class PPOPlayer(BaseIntelligentPlayer):
         self.memory.is_terminals.append(done)
 
     def request_action(self, game_state: List, valid_actions: ndarray):
-        # action = self.ppo.policy_old.act(np.array(game_state), self.memory, valid_actions)
-        action = self.ppo.policy_old.act(np.array(game_state), self.memory)
+        action = self.ppo.policy_old.act(np.array(game_state), self.memory, valid_actions)
+        # action = self.ppo.policy_old.act(np.array(game_state), self.memory)
         # idx = torch.argmax(self.ppo.policy_old.action_probs)
         # print("ideal card: {}".format(Card.description(idx.item())))
         # for idx, a in enumerate(self.ppo.policy_old.new_probs):

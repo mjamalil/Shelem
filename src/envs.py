@@ -255,7 +255,7 @@ class ShelemEnv(gym.Env):
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % NUM_PLAYERS
         self.team_1_round_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         self.team_2_round_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
-        self.reward = self.get_round_reward(self.hakem, self.team_1_round_score, self.team_2_round_score, self.reward)
+        self.reward = self.get_round_reward(self.hakem.player_id, self.team_1_round_score, self.team_2_round_score, self.reward)
         self.french_deck = self.players[0].saved_deck + self.players[2].saved_deck + \
                            self.players[1].saved_deck + self.players[3].saved_deck
         final_bet = self.round_bets[-1]
@@ -301,8 +301,6 @@ class ShelemEnv(gym.Env):
             IntelligentPlayer(2, 0),
             IntelligentPlayer(3, 1)
         ])
-        for i in range(NUM_PLAYERS):
-            self.players[i].init_policies_from_another_policy(self.optimization_policy)
         self.round_counter = 1
         self.team_1_score = 0.0
         self.team_2_score = 0.0

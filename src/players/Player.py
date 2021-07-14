@@ -20,7 +20,7 @@ class Bet:
     def bet(self):
         return self.bet_score
 
-    def __repr__(self):
+    def __str__(self):
         return "Bet(player_id=%r, score=%r)" % (self.id, self.bet)
 
 
@@ -45,6 +45,9 @@ class Player:
         self.l_fail = 0
         self.nl_shelem = 0
         self.l_double = 0
+
+    def __str__(self):
+        return f"Player{self.player_id}"
 
     def begin_round(self, deck: Deck):
         self.deck = deck
@@ -158,10 +161,10 @@ class Player:
 
     def print_game_stat(self):
         print()
-        print(f"{colors.OKGREEN}Non-Leader Double:\t{self.nl_double}{colors.ENDC}")
-        print(f"{colors.OKGREEN}Leader Shelem:\t{self.l_shelem}{colors.ENDC}")
-        print(f"{colors.OKGREEN}Non-Leader Success:\t{self.nl_success}{colors.ENDC}")
-        print(f"{colors.OKGREEN}Leader Success:\t{self.l_success}{colors.ENDC}")
+        print(f"{colors.GREEN}Non-Leader Double:\t{self.nl_double}{colors.ENDC}")
+        print(f"{colors.GREEN}Leader Shelem:\t{self.l_shelem}{colors.ENDC}")
+        print(f"{colors.GREEN}Non-Leader Success:\t{self.nl_success}{colors.ENDC}")
+        print(f"{colors.GREEN}Leader Success:\t{self.l_success}{colors.ENDC}")
         print("--------------------")
         print(f"{colors.FAIL}Non-Leader fail:\t{self.nl_fail}{colors.ENDC}")
         print(f"{colors.FAIL}Leader fail:\t{self.l_fail}{colors.ENDC}")

@@ -98,9 +98,10 @@ class Game:
                 if not valid_card:
                     raise RuntimeError("Player {} played invalid card {}".format(current_player_id, played_card))
                 if played_card.suit == hokm_suit:
-                    print(f"{colors.FAIL}Player{current_player_id}-> {played_card}{colors.ENDC}")
+                    color = colors.FAIL
                 else:
-                    print(f"{colors.OKGREEN}Player{current_player_id}-> {played_card}{colors.ENDC}")
+                    color = colors.GREEN
+                print(f"{color}Player{current_player_id}-> {played_card}{colors.ENDC}")
                 for j in range(NUM_PLAYERS):
                     self.players[j].card_has_been_played(current_hand, current_suit)
 
@@ -168,7 +169,7 @@ class Game:
     def finish_game(self):
         print("*" * 100)
         print("{}Final Scores = Team 1 score = {} and Team 2 score = {}{}".format(
-            colors.OKCYAN, self.team_1_score, self.team_2_score, colors.ENDC))
+            colors.CYAN, self.team_1_score, self.team_2_score, colors.ENDC))
         self.players[0].print_game_stat()
 
     def check_game_finished(self):

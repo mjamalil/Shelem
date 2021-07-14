@@ -19,7 +19,7 @@ register(
 
 def train():
     seed = 42
-    num_episodes = 5000
+    num_episodes = 10000
     num_eval_games = 2000
     evaluate_every = 100
     algorithm = 'dqn'
@@ -63,6 +63,7 @@ def train():
 
             # Generate data from the environment
             trajectories, payoffs = env.run(is_training=True)
+            print(payoffs)
 
             # Reorganaize the data to be state, action, reward, next_state, done
             trajectories = reorganize(trajectories, payoffs)
@@ -74,8 +75,8 @@ def train():
                 agent.feed(ts)
 
             # Evaluate the performance. Play with random agents.
-            if episode % evaluate_every == 0:
-                logger.log_performance(env.timestep, tournament(env, num_eval_games)[0])
+            # if episode % evaluate_every == 0:
+            #     logger.log_performance(env.timestep, tournament(env, num_eval_games)[0])
 
         # Get the paths
         csv_path, fig_path = logger.csv_path, logger.fig_path

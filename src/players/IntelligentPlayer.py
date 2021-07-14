@@ -1,6 +1,5 @@
 from typing import Tuple, List
 import numpy as np
-import torch
 from numpy import ndarray
 
 from dealer.Card import Card
@@ -25,9 +24,6 @@ class BaseIntelligentPlayer(Player):
         for c in self.deck:
             valid_actions[c.id] = True
         return valid_actions
-
-    def init_policies_from_another_policy(self, other_policy):
-        pass
 
     def begin_round(self, deck: Deck):
         super().begin_round(deck)

@@ -10,13 +10,13 @@ from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
 
 training = True
-benchmark_rounds = 100000
+benchmark_rounds = 0
 
 class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):
-        self.game_end = 1165
-        self.limit_game_number = 0
+        self.game_end = 1165000
+        self.limit_game_number = 2000
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0
@@ -79,7 +79,7 @@ class Game:
         self.logging.log_hokm(game_mode, hokm_suit)
         # print(game_mode, hokm_suit)
         for i in range(NUM_PLAYERS):
-            self.players[i].set_hokm_and_game_mode(game_mode, hokm_suit)
+            self.players[i].set_hokm_and_game_mode(game_mode, hokm_suit, hakem.player_id)
 
         # card play phase
         hands_played = []

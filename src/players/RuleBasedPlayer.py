@@ -132,11 +132,19 @@ class RuleBasedPlayer(IntelligentPlayer):
         return best_card
 
     def play_lowest_card(self, current_suit: SUITS):
-        # print("Playing lowest card")
         for c in self.deck.cards:
             if c.suit == current_suit:
                 return c
-        return self.deck.cards[0]
+        worst_card = None
+        for c in self.deck.cards:
+            if worst_card is None:
+                worst_card = c
+            else:
+                worst_value = worst_card.value.value.get_value(self.game_mode)
+                current_value = c.value.value.get_value(self.game_mode)
+                if current_value < worst_value:
+                    worst_card = c
+        return worst_card
 
     def is_this_the_best_card(self, card: Card):
         for value in VALUES:

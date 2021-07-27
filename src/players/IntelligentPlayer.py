@@ -55,23 +55,25 @@ class BaseIntelligentPlayer(Player):
             self.game_state[STATE_PLAYED_CARDS_IDX + self.saved_deck[i].id] = 1
         return trump
 
-    def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS):
-        super().set_hokm_and_game_mode(game_mode, hokm_suit)
+    def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS, hakem: int):
+        super().set_hokm_and_game_mode(game_mode, hokm_suit, hakem)
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
-        self.game_state[STATE_TRUMP_IDX] = hokm_suit / SUITS.NOSUIT
+        for i in range(SUITS.SPADES):
+            self.game_state[STATE_TRUMP_IDX+i] = int(hokm_suit == SUITS(i+1))
+        for i in range(NUM_PLAYERS):
+            self.game_state[STATE_LEADER_IDX+i] = int(i == hakem)
 
     def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
         return self.deck.pop_random_from_suit(current_suit)
 
     def card_has_been_played(self, current_hand: List, current_suit: SUITS):
         max_crr_trick_num = 3
-        self.game_state[STATE_SUIT_IDX] = current_suit / SUITS.NOSUIT
+        for i in range(SUITS.SPADES):
+            self.game_state[STATE_SUIT_IDX+i] = int(current_suit == SUITS(i+1))
         for i in range(max_crr_trick_num):
             if i < len(current_hand):
-                self.game_state[STATE_CRR_TRICK_IDX + i] = current_hand[i].id / DECK_SIZE
-            else:
-                self.game_state[STATE_CRR_TRICK_IDX + i] = 1
+                self.game_state[STATE_CRR_TRICK_IDX + i*DECK_SIZE + current_hand[i].id] = 1
 
     def discard_cards_from_leader(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
@@ -81,26 +83,6 @@ class BaseIntelligentPlayer(Player):
         # TODO: NotImplemented
         return super().discard_cards_from_leader()
 
-    def encode_last_bets(self, all_bets: List[Bet]):
-        score_mappings = {v: k for k, v in enumerate([x * 5 for x in ([0] + list(range(20, 36)))])}
-        opponent_1_id = (self.player_id + 1) % 4
-        encoding_vector = [0] * (len(score_mappings) * 4 + 52)
-        for bet in all_bets:
-            score_id = score_mappings[int(bet.bet)]
-            if bet.id == self.player_id:
-                encoding_vector[score_id] = 1
-            elif bet.id == self.team_mate_player_id:
-                encoding_vector[score_id + len(score_mappings)] = 1
-            elif bet.id == opponent_1_id:
-                encoding_vector[score_id + 2 * len(score_mappings)] = 1
-            else:
-                encoding_vector[score_id + 3 * len(score_mappings)] = 1
-        for card in self.deck:
-            val = card.value.value.normal_value
-            st = card.suit.value - 1
-            encoding_vector[st * 13 + val + len(score_mappings) * 4] = 1
-        return encoding_vector
-
     def win_trick(self, hand: List[Card], winner_id: int):
         super().win_trick(hand, winner_id)
         for c in hand:
@@ -109,8 +91,8 @@ class BaseIntelligentPlayer(Player):
             # add card to played cards
             self.game_state[STATE_PLAYED_CARDS_IDX + c.id] = 1
         max_crr_trick_num = 3
-        for i in range(max_crr_trick_num):
-            self.game_state[STATE_CRR_TRICK_IDX + i] = 1
+        for i in range(max_crr_trick_num*DECK_SIZE):
+            self.game_state[STATE_CRR_TRICK_IDX + i] = 0
         self.game_state[STATE_SUIT_IDX] = 1.0
 
     def get_valid_actions(self, current_suit):
@@ -150,15 +132,15 @@ class BaseIntelligentPlayer(Player):
 
     def log_game_state(self):
         my_cards = []
-        for idx in range(STATE_TRUMP_IDX):
+        for idx in range(DECK_SIZE):
             for c in self.deck:
                 if idx == c.id and self.game_state[idx] == 1:
                     my_cards.append(c)
-        print("MyCards", my_cards)
-        print("Trump", self.game_state[STATE_TRUMP_IDX])
-        print("Current Suit", self.game_state[STATE_SUIT_IDX])
+        print("MyCards", self.deck)
+        print("Trump", self.game_state[STATE_TRUMP_IDX:STATE_TRUMP_IDX+4])
+        print("Current Suit", self.game_state[STATE_SUIT_IDX:STATE_SUIT_IDX+4])
         print("Current Trick", self.game_state[STATE_CRR_TRICK_IDX:STATE_PLAYED_CARDS_IDX])
-        print("Played Cards", self.game_state[STATE_PLAYED_CARDS_IDX:])
+        print("Played Cards", self.game_state[STATE_PLAYED_CARDS_IDX:STATE_PLAYED_CARDS_IDX+DECK_SIZE])
 
 
 class IntelligentPlayer(BaseIntelligentPlayer):
@@ -298,7 +280,6 @@ class PPOPlayer(BaseIntelligentPlayer):
             self.reward = Deck(hand).get_deck_score() / max_score
         else:
             self.reward = 0
-        self.reward = 0
         print(self.reward)
         done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
         if not done:

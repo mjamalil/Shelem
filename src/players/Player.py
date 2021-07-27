@@ -75,7 +75,7 @@ class Player:
             else:
                 self.nl_double += 1
 
-    def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS):
+    def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS, hakem: int):
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
 
@@ -100,7 +100,7 @@ class Player:
 
     def decide_game_mode(self, middle_hand: Deck):
         self.deck += middle_hand
-        return GAMEMODE.NORMAL
+        return GAMEMODE.SARAS
 
     def decide_trump(self) -> SUITS:
         """

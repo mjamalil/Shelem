@@ -176,16 +176,12 @@ class ShelemEnv(gym.Env):
         if not self.hakem.game_has_begun:
             raise ValueError("Game has not started yet")
         self.game_mode = self.hakem.decide_game_mode(self.round_middle_deck)
-        # p_action, p_game_mode = self.select_action()
-        # print(p_game_mode)
 
     def decide_trump(self, action):
         self.current_suit = self.hokm_suit = self.hakem.decide_trump()
         self.logging.log_hokm(self.game_mode, self.hokm_suit)
         for i in range(NUM_PLAYERS):
-            self.players[i].set_hokm_and_game_mode(self.game_mode, self.hokm_suit)
-        # p_action, p_trump = self.select_action()
-        # print(p_trump)
+            self.players[i].set_hokm_and_game_mode(self.game_mode, self.hokm_suit, self.hakem)
 
     def player_widow_card(self, action):
         saving_index = self.hakem.decide_widow_card()

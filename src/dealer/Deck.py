@@ -1,7 +1,6 @@
 import random
 from typing import List, Tuple, Any
 
-from dealer import Utils
 from dealer.Card import Card
 from players.Enum import SUITS, VALUES
 
@@ -114,7 +113,7 @@ class Deck:
         Current build does not build Jokers!
         """
         built_cards = []
-        id = 0 # 0,1,2,3 -> 2s, 4,5,6,7 -> 3s ... 48,49,50,51 -> As
+        id = 0  # 0,1,2,3 -> 2s, 4,5,6,7 -> 3s ... 48,49,50,51 -> As
         for val in VALUES:
             for suit in SUITS:
                 if suit == SUITS.NOSUIT:

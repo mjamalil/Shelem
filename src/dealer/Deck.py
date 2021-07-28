@@ -70,9 +70,9 @@ class Deck:
         score = number_of_hands * 5
         for card in self._cards:
             if card.value == VALUES.Ace or card.value == VALUES.Ten:
-                score += 10
+                score += 0#10
             elif card.value == VALUES.Five:
-                score += 5
+                score += 0#5
         return score
 
     def pop_random_from_suit(self, suit: SUITS):

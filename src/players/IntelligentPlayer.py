@@ -40,7 +40,7 @@ class BaseIntelligentPlayer(Player):
          Score should be strictly > previous_last_bet
         """
         # TODO: NotImplemented
-        return Bet(self.player_id, 120)
+        return Bet(self.player_id, SAFE_BET)
 
     def decide_trump(self) -> SUITS:
         trump = super().decide_trump()

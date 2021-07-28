@@ -277,21 +277,25 @@ class ShelemGame:
                            self.players[1].saved_deck + self.players[3].saved_deck
         final_bet = self.round_bets[-1]
         team1_has_bet = final_bet.id == 0 or final_bet.id == 2
-        if (team1_has_bet and self.team_1_round_score >= final_bet.bet) or \
-                (not team1_has_bet and self.team_2_round_score >= final_bet.bet):
-            if team1_has_bet:
+        if team1_has_bet:
+            if self.team_2_round_score == 0:
+                s1, s2 = 2 * final_bet.bet, 0
+            elif self.team_1_round_score > final_bet.bet:
                 s1, s2 = final_bet.bet, self.team_2_round_score
-            else:
-                s1, s2 = self.team_1_round_score, final_bet.bet
-        elif (team1_has_bet and self.team_2_round_score < 85) or (not team1_has_bet and self.team_1_round_score < 85):
-            if team1_has_bet:
+            elif self.team_1_round_score > self.team_2_round_score:
                 s1, s2 = -final_bet.bet, self.team_2_round_score
             else:
-                s1, s2 = self.team_1_round_score, -final_bet.bet
-        elif team1_has_bet:
-            s1, s2 = -2 * final_bet.bet, self.team_2_round_score
+                s1, s2 = -2 * final_bet.bet, self.team_2_round_score
         else:
-            s1, s2 = self.team_1_round_score, -2 * final_bet.bet
+            if self.team_1_round_score == 0:
+                s1, s2 = 0, 2 * final_bet.bet
+            elif self.team_2_round_score > final_bet.bet:
+                s1, s2 = self.team_1_round_score, final_bet.bet
+            elif self.team_2_round_score > self.team_1_round_score:
+                s1, s2 = self.team_1_round_score, -final_bet.bet
+            else:
+                s1, s2 = self.team_1_round_score, -2 * final_bet.bet
+
         self.rewards[0] = sorted((-1, (s1 - s2) / 330, 1))[1]
         self.team_1_score += s1
         self.team_2_score += s2

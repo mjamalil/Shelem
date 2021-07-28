@@ -4,7 +4,7 @@ from typing import Tuple, List
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Utils import InvalidActionError
-from players.Enum import GAMEMODE, SUITS, colors
+from players.Enum import GAMEMODE, SUITS, colors, SAFE_BET
 
 
 class Bet:
@@ -139,7 +139,7 @@ class Player:
          Score should be strictly > previous_last_bet
         """
         # TODO: NotImplemented
-        return Bet(self.player_id, 120)
+        return Bet(self.player_id, SAFE_BET)
         choice = random.random()
         if choice < 0.4:
             return Bet(self.player_id, 0)

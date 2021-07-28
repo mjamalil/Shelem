@@ -21,23 +21,22 @@ register(
 
 def train():
     seed = 4
-    num_episodes = 50000
-    num_eval_games = 100
+    num_episodes = 5000
     evaluate_every = 1000
+    num_eval_games = 100
     algorithm = 'dqn'
     log_dir = '../../experiments/shelem_result/'
     model_path = os.path.join(log_dir, 'model.pth')
     load_model = False
 
     # Check whether gpu is available
-    device = get_device()
+    # device = get_device()
     device = torch.device("cpu")
 
     # Seed numpy, torch, random
     set_seed(seed)
 
     # Make the environment with seed
-    # env = rlcard.make(env, config={'seed': seed})
     default_config = {
         'allow_step_back': False,
         'seed': seed,

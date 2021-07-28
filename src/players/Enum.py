@@ -17,6 +17,9 @@ NUM_HOKM_CARDS = 13
 
 ACTION_SIZE = 52
 
+SAFE_BET = 35
+
+
 class SUITS(IntEnum):
     DIAMONDS = auto()
     CLUBS = auto()

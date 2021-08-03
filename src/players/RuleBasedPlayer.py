@@ -12,8 +12,8 @@ class RuleBasedPlayer(IntelligentPlayer):
         super().begin_round(deck)
         self.played_cards = ([], [], [], [], [])
 
-    def win_trick(self, hand: List[Card], winner_id: int):
-        super().win_trick(hand, winner_id)
+    def end_trick(self, hand: List[Card], winner_id: int):
+        super().end_trick(hand, winner_id)
         for c in hand:
             self.played_cards[c.suit].append(c.value)
 

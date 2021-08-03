@@ -4,11 +4,10 @@ import os
 import time
 import torch
 import datetime
-
+import keyboard
 from rlcard.agents import RandomAgent
 from rlcard.utils import get_device, set_seed, tournament, reorganize, Logger
-from rlcard.utils.logger import plot
-
+from rlcard.utils.logger import plot_curve
 
 from rlcard.envs.registration import register
 
@@ -21,7 +20,7 @@ register(
 
 def train():
     seed = 4
-    num_episodes = 5000
+    num_episodes = 1000
     evaluate_every = 1000
     num_eval_games = 100
     algorithm = 'dqn'
@@ -67,9 +66,15 @@ def train():
     env.set_agents(agents)
 
     t0 = time.time()
+    key_press = "idkfa"
+    key_idx = 0
     # Start training
     with Logger(log_dir) as logger:
         for episode in range(num_episodes):
+            if keyboard.is_pressed(key_press[key_idx]):  # if key 'q' is pressed
+                key_idx += 1
+                if key_idx >= len(key_press):
+                    break  # finishing the loop
 
             if algorithm == 'nfsp':
                 agents[0].sample_episode_policy()
@@ -78,7 +83,7 @@ def train():
             trajectories, payoffs = env.run(is_training=True)
             print(payoffs)
 
-            # Reorganaize the data to be state, action, reward, next_state, done
+            # Reorganize the data to be state, action, reward, next_state, done
             trajectories = reorganize(trajectories, payoffs)
 
             # Feed transitions into agent memory, and train the agent
@@ -100,7 +105,7 @@ def train():
     print(elapsed_time)
 
     # Plot the learning curve
-    plot(csv_path, fig_path, algorithm)
+    plot_curve(csv_path, fig_path, algorithm)
 
     # Save model
     torch.save(agent, model_path)

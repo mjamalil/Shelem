@@ -8,7 +8,7 @@ from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
 from dealer.Utils import ThreeConsecutivePassesException, InvalidActionError
-from players.Enum import NUMBER_OF_PARAMS, ACTION_SIZE, NUM_PLAYERS, GAMESTATE, SUITS, GAMEMODE
+from players.Enum import NUMBER_OF_PARAMS, ACTION_SIZE, NUM_PLAYERS, GAMESTATE, SUITS, GAMEMODE, MAX_SCORE
 from players.IntelligentPlayer import IntelligentPlayer, AgentPlayer
 from players.Player import Player
 
@@ -237,9 +237,9 @@ class ShelemEnv(gym.Env):
         self.round_hands_played.append(self.round_current_hand)
         self.logging.add_hand(self.hand_first_player, self.round_current_hand)
         for p in self.players:
-            p.win_trick(self.round_current_hand, self.hand_winner)
+            p.end_trick(self.round_current_hand, self.hand_winner)
         if self.hand_winner in [0, 2]:
-            self.reward = Deck(self.round_current_hand).get_deck_score() / 165
+            self.reward = Deck(self.round_current_hand).get_deck_score() / MAX_SCORE
         else:
             self.reward = 0
         self.hand_first_player = self.hand_winner
@@ -333,20 +333,20 @@ class ShelemEnv(gym.Env):
 
     def get_round_reward(self, hakem_id: int, team1_score: int, team2_score: int, last_reward):
         if hakem_id in [0, 2]:
-            if team1_score == 165:
+            if team2_score == 0:
                 round_reward = 1.0
             elif team1_score >= self.round_bets[-1].bet:
                 round_reward = 0.5
-            elif team1_score > 80:
+            elif team1_score > team2_score:
                 round_reward = -0.7
             else:
                 round_reward = -1.0
         else:
-            if team2_score == 165:
-                round_reward = 0.0
+            if team1_score == 0:
+                round_reward = -0.5
             elif team2_score >= self.round_bets[-1].bet:
                 round_reward = 0.0
-            elif team2_score > 80:
+            elif team2_score > team1_score:
                 round_reward = 0.5
             else:
                 round_reward = 1.0

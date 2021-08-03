@@ -4,19 +4,21 @@ from typing import Tuple, List
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
+from dealer.Utils import get_round_payoff
 from players.Enum import NUM_PLAYERS, SUITS, colors
 from players.IntelligentPlayer import PPOPlayer
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
 
 training = True
-benchmark_rounds = 0
+
 
 class Game:
 
     def __init__(self, players: List[Player], verbose: bool = False):
-        self.game_end = 1165000
+        self.game_end = 1165
         self.limit_game_number = 2000
+        self.benchmark_rounds = 0
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0
@@ -120,7 +122,7 @@ class Game:
             self.logging.add_hand(first_player, current_hand)
 
             for i in range(NUM_PLAYERS):
-                self.players[i].win_trick(current_hand, last_winner_id)
+                self.players[i].end_trick(current_hand, last_winner_id)
 
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
 
@@ -132,33 +134,19 @@ class Game:
         team1_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         team2_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
         final_bet = last_bets[-1]
-        team1_has_bet = final_bet.id == 0 or final_bet.id == 2
         if self.verbose:
             self.logging.log()
-
-        if (team1_has_bet and team1_score >= final_bet.bet) or (not team1_has_bet and team2_score >= final_bet.bet):
-            if team1_has_bet:
-                result = final_bet.bet, team2_score
-            else:
-                result = team1_score, final_bet.bet
-        elif (team1_has_bet and team2_score < 85) or (not team1_has_bet and team1_score < 85):
-            if team1_has_bet:
-                result = -final_bet.bet, team2_score
-            else:
-                result = team1_score, -final_bet.bet
-        elif team1_has_bet:
-            result = -2 * final_bet.bet, team2_score
-        else:
-            result = team1_score, -2 * final_bet.bet
         for i in range(4):
             self.players[i].end_round(self.hakem_id, team1_score, team2_score)
-        return result
+
+        final_score1, final_score2, reward = get_round_payoff(self.hakem_id, final_bet.bet, team1_score, team2_score)
+        return final_score1, final_score2
 
     def begin_game(self):
         self.round_counter = 1
         while not self.check_game_finished():
             s1, s2 = self.play_a_round()
-            if not training or self.round_counter > benchmark_rounds:
+            if not training or self.round_counter > self.benchmark_rounds:
                 self.team_1_score += s1
                 self.team_2_score += s2
             print("{}Round {:04d}: H:{} Team 1 score = {:04d} ({:04d}) and Team 2 score = {:04d} ({:04d}){}".format(
@@ -185,4 +173,4 @@ class Game:
 
 
 if __name__ == '__main__':
-    Game([PPOPlayer(0, 2), RuleBasedPlayer(1, 3), RuleBasedPlayer(2, 0), RuleBasedPlayer(3, 1)]).begin_game()
+    Game([PPOPlayer(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()

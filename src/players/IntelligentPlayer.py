@@ -83,8 +83,8 @@ class BaseIntelligentPlayer(Player):
         # TODO: NotImplemented
         return super().discard_cards_from_leader()
 
-    def win_trick(self, hand: List[Card], winner_id: int):
-        super().win_trick(hand, winner_id)
+    def end_trick(self, hand: List[Card], winner_id: int):
+        super().end_trick(hand, winner_id)
         for c in hand:
             # remove card from my cards if I have it
             self.game_state[c.id] = 0
@@ -93,7 +93,8 @@ class BaseIntelligentPlayer(Player):
         max_crr_trick_num = 3
         for i in range(max_crr_trick_num*DECK_SIZE):
             self.game_state[STATE_CRR_TRICK_IDX + i] = 0
-        self.game_state[STATE_SUIT_IDX] = 1.0
+        for i in range(SUITS.SPADES):
+            self.game_state[STATE_SUIT_IDX+i] = 0
 
     def get_valid_actions(self, current_suit):
         valid_actions = DECK_SIZE * [False]
@@ -123,20 +124,16 @@ class BaseIntelligentPlayer(Player):
                 valid_actions.append(c.id)
                 valid_action_found = True
 
-        if not valid_action_found:
-            raise RuntimeError("No Valid action found")
+        # if not valid_action_found:
+        #     raise RuntimeError("No Valid action found")
         return valid_actions
 
     def build_model(self):
         pass
 
     def log_game_state(self):
-        my_cards = []
-        for idx in range(DECK_SIZE):
-            for c in self.deck:
-                if idx == c.id and self.game_state[idx] == 1:
-                    my_cards.append(c)
         print("MyCards", self.deck)
+        print("MyCards", self.game_state[:STATE_CRR_TRICK_IDX])
         print("Trump", self.game_state[STATE_TRUMP_IDX:STATE_TRUMP_IDX+4])
         print("Current Suit", self.game_state[STATE_SUIT_IDX:STATE_SUIT_IDX+4])
         print("Current Trick", self.game_state[STATE_CRR_TRICK_IDX:STATE_PLAYED_CARDS_IDX])
@@ -227,36 +224,23 @@ class PPOPlayer(BaseIntelligentPlayer):
         self.reward = 0
 
     def end_round(self, hakem_id: int, team1_score: int, team2_score: int):
-        # if self.player_id in [0, 2]:
-        #     reward = (team1_score - team2_score) / 330
-        # else:
-        #     reward = (team2_score - team1_score) / 330
-        # SUCCESS_M = 0.0019
-        # FAIL_M = 0.0058
-        # SUCCESS_B = 0.859
-        # FAIL_B = 0.488
-        # if team1_score > team2_score:
-        #     m = SUCCESS_M
-        #     b = SUCCESS_B
-        # else:
-        #     m = FAIL_M
-        #     b = FAIL_B
         super().end_round(hakem_id, team1_score, team2_score)
-        if hakem_id in [self.player_id, self.team_mate_player_id]:
+        # only works for first player as ppo
+        if hakem_id in [0, 2]:
             if team2_score == 0:
                 round_reward = 1.0
             elif team1_score >= self.hakem_bid.bet_score:
                 round_reward = 0.5
-            elif team1_score > 80:
+            elif team1_score > team2_score:
                 round_reward = -0.7
             else:
                 round_reward = -1.0
         else:
             if team1_score == 0:
-                round_reward = 0.0
+                round_reward = -0.5
             elif team2_score >= self.hakem_bid.bet_score:
                 round_reward = 0.0
-            elif team2_score > 80:
+            elif team2_score > team1_score:
                 round_reward = 0.5
             else:
                 round_reward = 1.0
@@ -264,22 +248,19 @@ class PPOPlayer(BaseIntelligentPlayer):
         # reward = m * (team1_score - team2_score) + b
         round_reward += self.reward
         print(round_reward)
-        if round_reward > 1.0:
-            round_reward = 1.0
-        elif round_reward < -1.0:
-            round_reward = -1.0
+        round_reward = sorted((-1, (team1_score - team2_score) / 2 * MAX_SCORE, 1))[1]
         self.set_reward(round_reward, True)
         self.ppo.update(self.memory)
         self.memory.clear_memory()
 
-    def win_trick(self, hand: List[Card], winner_id: int):
-        super().win_trick(hand, winner_id)
+    def end_trick(self, hand: List[Card], winner_id: int):
+        super().end_trick(hand, winner_id)
         max_score = self.hakem_bid.bet_score
-        max_score = 165
         if winner_id == self.player_id or winner_id == self.team_mate_player_id:
-            self.reward = Deck(hand).get_deck_score() / max_score
+            self.reward = Deck(hand).get_deck_score() / MAX_SCORE
         else:
             self.reward = 0
+        # self.reward = 0
         print(self.reward)
         done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
         if not done:

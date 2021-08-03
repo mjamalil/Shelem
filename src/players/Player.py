@@ -61,7 +61,7 @@ class Player:
                 self.l_shelem += 1
             elif team1_score >= self.hakem_bid.bet_score:
                 self.l_success += 1
-            elif team1_score > 80:
+            elif team1_score > team2_score:
                 self.l_fail += 1
             else:
                 self.l_double += 1
@@ -70,7 +70,7 @@ class Player:
                 self.nl_shelem += 1
             elif team2_score >= self.hakem_bid.bet_score:
                 self.nl_fail += 1
-            elif team2_score > 80:
+            elif team2_score > team1_score:
                 self.nl_success += 1
             else:
                 self.nl_double += 1
@@ -82,7 +82,7 @@ class Player:
     def card_has_been_played(self, current_hand: List, current_suit: SUITS):
         pass
 
-    def win_trick(self, hand: List[Card], winner_id: int):
+    def end_trick(self, hand: List[Card], winner_id: int):
         # calculate reward
         self.trick_number += 1
         if self.player_id == winner_id:

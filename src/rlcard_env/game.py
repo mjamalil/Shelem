@@ -5,8 +5,8 @@ from typing import List
 from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
-from dealer.Utils import ThreeConsecutivePassesException, InvalidActionError
-from players.Enum import NUMBER_OF_PARAMS, ACTION_SIZE, NUM_PLAYERS, GAMESTATE, SUITS, GAMEMODE, colors
+from dealer.Utils import ThreeConsecutivePassesException, InvalidActionError, get_round_payoff
+from players.Enum import NUMBER_OF_PARAMS, ACTION_SIZE, NUM_PLAYERS, GAMESTATE, SUITS, GAMEMODE, colors, MAX_SCORE
 from players.IntelligentPlayer import IntelligentPlayer, AgentPlayer
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
@@ -162,7 +162,7 @@ class ShelemGame:
             if len(self.round_hands_played) == 12:
                 self.end_round()
                 self.game_state = GAMESTATE.READY_TO_START
-                return self.step()
+                # return self.step()
             return state, current_player
         else:
             raise ValueError("INVALID state {} in game state machine".format(self.game_state))
@@ -172,6 +172,7 @@ class ShelemGame:
         d1, d2, d3, self.round_middle_deck, d4 = self.french_deck.deal()
         self.logging.log_middle_deck(self.round_middle_deck)
         decks = deque([d1, d2, d3, d4])
+        # rotate players
         for _ in range(self.player_id_receiving_first_hand):
             decks.append(decks.popleft())
         for i in range(NUM_PLAYERS):
@@ -220,6 +221,7 @@ class ShelemGame:
             self.observation = self.players[self.current_player].game_state
             if self.verbose >= 2:
                 self.players[self.current_player].log_game_state()
+
             try:
                 played_card = self.players[self.current_player].pop_card_from_deck(action, self.current_suit)
             except InvalidActionError:
@@ -240,10 +242,12 @@ class ShelemGame:
         for p in self.players:
             p.card_has_been_played(self.round_current_hand, self.current_suit)
 
-        if self.hand_winner_card is None or Card.compare(self.hand_winner_card, played_card, self.game_mode, self.hokm_suit, self.current_suit) < 0:
+        if self.hand_winner_card is None or Card.compare(
+                self.hand_winner_card, played_card, self.game_mode, self.hokm_suit, self.current_suit) < 0:
             self.hand_winner_card = played_card
             self.hand_winner = self.current_player
 
+        # goto next player`
         if len(self.round_current_hand) == NUM_PLAYERS:
             self.end_trick()
             self.current_player = self.hand_winner
@@ -258,11 +262,8 @@ class ShelemGame:
         self.round_hands_played.append(self.round_current_hand)
         self.logging.add_hand(self.hand_first_player, self.round_current_hand)
         for p in self.players:
-            p.win_trick(self.round_current_hand, self.hand_winner)
-        # if self.hand_winner in [0, 2]:
-        #     self.rewards[0] = Deck(self.round_current_hand).get_deck_score() / 165
-        # else:
-        #     self.rewards[0] = 0
+            p.end_trick(self.round_current_hand, self.hand_winner)
+
         self.hand_first_player = self.hand_winner
         self.round_current_hand = []
         self.current_suit = SUITS.NOSUIT
@@ -272,31 +273,15 @@ class ShelemGame:
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % NUM_PLAYERS
         self.team_1_round_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         self.team_2_round_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
-        self.rewards[0] = self.get_round_reward(self.hakem.player_id, self.team_1_round_score, self.team_2_round_score)
+        final_bet = self.round_bets[-1]
+        s1, s2, self.rewards[0] = get_round_payoff(
+            self.hakem.player_id, final_bet.bet, self.team_1_round_score, self.team_2_round_score)
+        self.rewards[0] = sorted((-1, (s1 - s2) / (2 * MAX_SCORE), 1))[1]
+        # self.rewards[2] = self.rewards[0]
+        # self.rewards[3] = self.rewards[1] = -self.rewards[0]
         self.french_deck = self.players[0].saved_deck + self.players[2].saved_deck + \
                            self.players[1].saved_deck + self.players[3].saved_deck
-        final_bet = self.round_bets[-1]
-        team1_has_bet = final_bet.id == 0 or final_bet.id == 2
-        if team1_has_bet:
-            if self.team_2_round_score == 0:
-                s1, s2 = 2 * final_bet.bet, 0
-            elif self.team_1_round_score > final_bet.bet:
-                s1, s2 = final_bet.bet, self.team_2_round_score
-            elif self.team_1_round_score > self.team_2_round_score:
-                s1, s2 = -final_bet.bet, self.team_2_round_score
-            else:
-                s1, s2 = -2 * final_bet.bet, self.team_2_round_score
-        else:
-            if self.team_1_round_score == 0:
-                s1, s2 = 0, 2 * final_bet.bet
-            elif self.team_2_round_score > final_bet.bet:
-                s1, s2 = self.team_1_round_score, final_bet.bet
-            elif self.team_2_round_score > self.team_1_round_score:
-                s1, s2 = self.team_1_round_score, -final_bet.bet
-            else:
-                s1, s2 = self.team_1_round_score, -2 * final_bet.bet
 
-        self.rewards[0] = sorted((-1, (s1 - s2) / 330, 1))[1]
         self.team_1_score += s1
         self.team_2_score += s2
         print("{}Round {}: Team 1 score = {} ({}) and Team 2 score = {} ({}){}".format(
@@ -317,33 +302,6 @@ class ShelemGame:
             return True
         return False
 
-    def get_round_reward(self, hakem_id: int, team1_score: int, team2_score: int, last_reward: int = 0):
-        if hakem_id in [0, 2]:
-            if team1_score == 165:
-                round_reward = 1.0
-            elif team1_score >= self.round_bets[-1].bet:
-                round_reward = 0.5
-            elif team1_score > 80:
-                round_reward = -0.7
-            else:
-                round_reward = -1.0
-        else:
-            if team2_score == 165:
-                round_reward = -0.4
-            elif team2_score >= self.round_bets[-1].bet:
-                round_reward = 0.0
-            elif team2_score > 80:
-                round_reward = 0.5
-            else:
-                round_reward = 1.0
-
-        round_reward += last_reward
-        if round_reward > 1.0:
-            round_reward = 1.0
-        elif round_reward < -1.0:
-            round_reward = -1.0
-        return round_reward
-
     def get_state(self, player_id):
         """ Return player's state
         Args:
@@ -351,7 +309,8 @@ class ShelemGame:
         Returns:
             (dict): The state of the player
         """
-        return self.players[self.current_player].game_state
+        # self.players[player_id].log_game_state()
+        return self.players[player_id].game_state
 
     def get_payoffs(self):
         """ Return the payoffs of the game

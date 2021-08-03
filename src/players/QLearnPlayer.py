@@ -39,8 +39,8 @@ class QLearnPlayer(IntelligentPlayer):
             action = np.argmax(self.q_table[game_state])
         return action
 
-    def win_trick(self, hand: List[Card], winner_id: int, first_player: int):
-        super().win_trick(hand, winner_id, first_player)
+    def end_trick(self, hand: List[Card], winner_id: int, first_player: int):
+        super().end_trick(hand, winner_id, first_player)
 
         if winner_id == self.player_id or winner_id == self.team_mate_player_id:
             reward = Deck(hand).get_deck_score()

@@ -6,7 +6,7 @@ from dealer.Deck import Deck
 from dealer.Logging import Logging
 from dealer.Utils import get_round_payoff
 from players.Enum import NUM_PLAYERS, SUITS, colors
-from players.IntelligentPlayer import PPOPlayer
+from players.IntelligentPlayer import PPOPlayer, IntelligentPlayer
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
 
@@ -15,8 +15,9 @@ training = True
 
 class Game:
 
-    def __init__(self, players: List[Player], verbose: bool = False):
+    def __init__(self, players: List[Player]):
         self.game_end = 1165
+        self.random_play = 2000
         self.limit_game_number = 2000
         self.benchmark_rounds = 0
         self.french_deck = Deck()
@@ -24,8 +25,6 @@ class Game:
         self.player_id_receiving_first_hand = 0
         self.team_1_score = 0
         self.team_2_score = 0
-        self.verbose = verbose
-        self.logging = Logging()
 
     @staticmethod
     def check_card_validity(player: Player, card: Card, suit: SUITS):
@@ -39,7 +38,6 @@ class Game:
     def play_a_round(self) -> Tuple[int, int]:
         # the last three number shows game mode, trump_suit, current_suit
         d1, d2, d3, middle_deck, d4 = self.french_deck.deal()
-        self.logging.log_middle_deck(middle_deck)
         decks = deque([d1, d2, d3, d4])
         # give the first deck to the next player
         for _ in range(self.player_id_receiving_first_hand):
@@ -70,16 +68,12 @@ class Game:
                 betting_rounds += 1
         hakem = betting_players.popleft()
         self.hakem_id = hakem.player_id
-        self.logging.log_bet(last_bets[-1])
 
         # Leader selecting the trump suit
         game_mode = hakem.decide_game_mode(middle_deck)
         hokm_suit = hakem.decide_trump()
         for i in range(NUM_PLAYERS):
             self.players[i].hokm_has_been_determined(game_mode, hokm_suit, last_bets[-1])
-        self.logging.log_hakem_saved_hand(Deck(hakem.saved_deck))
-        self.logging.log_hokm(game_mode, hokm_suit)
-        # print(game_mode, hokm_suit)
         for i in range(NUM_PLAYERS):
             self.players[i].set_hokm_and_game_mode(game_mode, hokm_suit, hakem.player_id)
 
@@ -88,14 +82,16 @@ class Game:
         last_winner_id = self.hakem_id
         current_suit = hokm_suit
         for i in range(12):
-            first_player = last_winner_id
             current_player_id = last_winner_id
             current_hand = []
             winner_card = None
-            print("="*40)
+            Logging.debug("="*40)
 
             for _ in range(NUM_PLAYERS):
-                played_card = self.players[current_player_id].play_a_card(current_hand, current_suit)
+                if self.round_counter < self.random_play and current_player_id != 0:
+                    played_card = self.players[current_player_id].play_random_card(current_hand, current_suit)
+                else:
+                    played_card = self.players[current_player_id].play_a_card(current_hand, current_suit)
                 valid_card = self.check_card_validity(self.players[current_player_id], played_card, current_suit)
                 if not valid_card:
                     raise RuntimeError("Player {} played invalid card {}".format(current_player_id, played_card))
@@ -103,7 +99,7 @@ class Game:
                     color = colors.FAIL
                 else:
                     color = colors.GREEN
-                print(f"{color}Player{current_player_id}-> {played_card}{colors.ENDC}")
+                Logging.debug(f"{color}Player{current_player_id}-> {played_card}{colors.ENDC}")
                 for j in range(NUM_PLAYERS):
                     self.players[j].card_has_been_played(current_hand, current_suit)
 
@@ -119,10 +115,9 @@ class Game:
                 current_player_id = (current_player_id + 1) % 4
             hands_played.append(current_hand)
             current_suit = SUITS.NOSUIT
-            self.logging.add_hand(first_player, current_hand)
 
-            for i in range(NUM_PLAYERS):
-                self.players[i].end_trick(current_hand, last_winner_id)
+            for k in range(NUM_PLAYERS):
+                self.players[k].end_trick(current_hand, last_winner_id)
 
         self.player_id_receiving_first_hand = (self.player_id_receiving_first_hand + 1) % 4
 
@@ -134,8 +129,6 @@ class Game:
         team1_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         team2_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
         final_bet = last_bets[-1]
-        if self.verbose:
-            self.logging.log()
         for i in range(4):
             self.players[i].end_round(self.hakem_id, team1_score, team2_score)
 
@@ -149,14 +142,14 @@ class Game:
             if not training or self.round_counter > self.benchmark_rounds:
                 self.team_1_score += s1
                 self.team_2_score += s2
-            print("{}Round {:04d}: H:{} Team 1 score = {:04d} ({:04d}) and Team 2 score = {:04d} ({:04d}){}".format(
+            Logging.info("{}Round {:04d}: H:{} Team 1 score = {:04d} ({:04d}) and Team 2 score = {:04d} ({:04d}){}".format(
                 colors.WARNING, self.round_counter, self.hakem_id, s1, self.team_1_score, s2, self.team_2_score, colors.ENDC))
             self.round_counter += 1
         self.finish_game()
 
     def finish_game(self):
-        print("*" * 100)
-        print("{}Final Scores = Team 1 score = {} and Team 2 score = {}{}".format(
+        Logging.debug("*" * 100)
+        Logging.important("{}Final Scores = Team 1 score = {} and Team 2 score = {}{}".format(
             colors.CYAN, self.team_1_score, self.team_2_score, colors.ENDC))
         self.players[0].print_game_stat()
 
@@ -173,4 +166,5 @@ class Game:
 
 
 if __name__ == '__main__':
-    Game([PPOPlayer(0, 2), Player(1, 3), Player(2, 0), Player(3, 1)]).begin_game()
+    players = [PPOPlayer(0, 2), IntelligentPlayer(1, 3), IntelligentPlayer(2, 0), IntelligentPlayer(3, 1)]
+    Game(players).begin_game()

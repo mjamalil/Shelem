@@ -7,7 +7,9 @@ from players.Player import Bet
 
 
 class Logging:
-    def __init__(self):
+    verbose = 4
+
+    def __init__(self, verbose):
         self.hands = []
         self.bet = Bet(0, 0)
         self.game_mode = GAMEMODE.NORMAL
@@ -18,13 +20,33 @@ class Logging:
     def add_hand(self, player_id: int, hand: List[Card]):
         self.hands.append(Hand(player_id, hand))
 
-    def log(self):
+    def log_summery(self):
         print("Middle Deck:\n{}".format("\t".join(["   [{:14s}]    ".format(str(x)) for x in self.middle_deck.cards])))
         print("Betting Info:\tPlayer Id: {}\tScore: {}".format(self.bet.player_id, self.bet.bet))
         print("Hokm: {}\t\tGame Mode: {}".format(self.hokm_suit.name.title(), self.game_mode.name.title()))
         print("Hakem Saved Deck:\n{}\n\n".format("\t".join(["   [{:14s}]    ".format(str(x)) for x in self.saved_hand.cards])))
         for hand in self.hands:
             print(hand)
+
+    @classmethod
+    def debug(cls, message):
+        if cls.verbose > 3:
+            print(message)
+
+    @classmethod
+    def info(cls, message):
+        if cls.verbose > 2:
+            print(message)
+
+    @classmethod
+    def important(cls, message):
+        if cls.verbose > 1:
+            print(message)
+
+    @classmethod
+    def error(cls, message):
+        if cls.verbose > 0:
+            print(message)
 
     def log_bet(self, bet: Bet):
         self.bet = bet

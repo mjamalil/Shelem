@@ -4,6 +4,8 @@ from numpy import ndarray
 
 from dealer.Card import Card
 from dealer.Deck import Deck
+from dealer.Logging import Logging
+from dealer.Utils import get_round_payoff
 from players.Player import Player, Bet
 from players.Enum import *
 
@@ -175,7 +177,7 @@ class PPOPlayer(BaseIntelligentPlayer):
         invalid_card = True
         invalid_card_reward = -45 / self.hakem_bid.bet_score
         invalid_count = 1
-        print(self.deck)
+        Logging.debug(self.deck)
         while invalid_card:
             try:
                 valid_actions = self.get_valid_actions(current_suit)
@@ -220,48 +222,25 @@ class PPOPlayer(BaseIntelligentPlayer):
 
     def begin_round(self, deck: Deck):
         super().begin_round(deck)
-        print(deck)
         self.reward = 0
 
     def end_round(self, hakem_id: int, team1_score: int, team2_score: int):
         super().end_round(hakem_id, team1_score, team2_score)
         # only works for first player as ppo
-        if hakem_id in [0, 2]:
-            if team2_score == 0:
-                round_reward = 1.0
-            elif team1_score >= self.hakem_bid.bet_score:
-                round_reward = 0.5
-            elif team1_score > team2_score:
-                round_reward = -0.7
-            else:
-                round_reward = -1.0
-        else:
-            if team1_score == 0:
-                round_reward = -0.5
-            elif team2_score >= self.hakem_bid.bet_score:
-                round_reward = 0.0
-            elif team2_score > team1_score:
-                round_reward = 0.5
-            else:
-                round_reward = 1.0
-
-        # reward = m * (team1_score - team2_score) + b
+        final_score1, final_score2, round_reward = get_round_payoff(hakem_id, self.hakem_bid.bet_score, team1_score, team2_score)
         round_reward += self.reward
-        print(round_reward)
-        round_reward = sorted((-1, (team1_score - team2_score) / 2 * MAX_SCORE, 1))[1]
+        round_reward = sorted((-1, (final_score1 - final_score2) / (2 * MAX_SCORE), 1))[1]
         self.set_reward(round_reward, True)
         self.ppo.update(self.memory)
         self.memory.clear_memory()
 
     def end_trick(self, hand: List[Card], winner_id: int):
         super().end_trick(hand, winner_id)
-        max_score = self.hakem_bid.bet_score
         if winner_id == self.player_id or winner_id == self.team_mate_player_id:
             self.reward = Deck(hand).get_deck_score() / MAX_SCORE
         else:
             self.reward = 0
-        # self.reward = 0
-        print(self.reward)
+        self.reward = 0
         done = True if self.trick_number == PLAYER_INITIAL_CARDS else False
         if not done:
             self.set_reward(self.reward, done)

@@ -88,6 +88,9 @@ class Player:
         if self.player_id == winner_id:
             self.saved_deck += hand
 
+    def play_random_card(self, current_hand: List, current_suit: SUITS) -> Card:
+        return self.deck.pop_random_from_suit(current_suit)
+
     def pop_card_from_deck(self, card: int, current_suit: SUITS):
         try:
             selected_card = self.deck.get_by_value(card)

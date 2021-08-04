@@ -231,7 +231,7 @@ class ShelemGame:
             played_card = self.players[self.current_player].play_a_card(self.round_current_hand, self.current_suit)
 
         if played_card.suit == self.hokm_suit:
-            color = colors.FAIL
+            color = colors.RED
         else:
             color = colors.GREEN
         if self.verbose >= 2:
@@ -285,7 +285,7 @@ class ShelemGame:
         self.team_1_score += s1
         self.team_2_score += s2
         print("{}Round {}: Team 1 score = {} ({}) and Team 2 score = {} ({}){}".format(
-            colors.WARNING, self.round_counter, s1, self.team_1_score, s2, self.team_2_score, colors.ENDC))
+            colors.BROWN, self.round_counter, s1, self.team_1_score, s2, self.team_2_score, colors.ENDC))
         self.round_counter += 1
         if self.check_game_finished():
             print("{}Final Scores = Team 1 score = {} and Team 2 score = {}{}".format(

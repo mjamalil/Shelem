@@ -95,11 +95,7 @@ class Game:
                 valid_card = self.check_card_validity(self.players[current_player_id], played_card, current_suit)
                 if not valid_card:
                     raise RuntimeError("Player {} played invalid card {}".format(current_player_id, played_card))
-                if played_card.suit == hokm_suit:
-                    color = colors.FAIL
-                else:
-                    color = colors.GREEN
-                Logging.debug(f"{color}Player{current_player_id}-> {played_card}{colors.ENDC}")
+
                 for j in range(NUM_PLAYERS):
                     self.players[j].card_has_been_played(current_hand, current_suit)
 
@@ -112,7 +108,17 @@ class Game:
                     last_winner_id = current_player_id
                     winner_card = played_card
                     current_suit = played_card.suit
+
+                if played_card.suit == hokm_suit:
+                    color = colors.RED
+                elif played_card.suit == current_suit:
+                    color = colors.GREEN
+                else:
+                    color = colors.BROWN
+                Logging.debug(f"{color}Player{current_player_id}-> {played_card}{colors.ENDC}")
+
                 current_player_id = (current_player_id + 1) % 4
+
             hands_played.append(current_hand)
             current_suit = SUITS.NOSUIT
 
@@ -143,7 +149,7 @@ class Game:
                 self.team_1_score += s1
                 self.team_2_score += s2
             Logging.info("{}Round {:04d}: H:{} Team 1 score = {:04d} ({:04d}) and Team 2 score = {:04d} ({:04d}){}".format(
-                colors.WARNING, self.round_counter, self.hakem_id, s1, self.team_1_score, s2, self.team_2_score, colors.ENDC))
+                colors.BLUE, self.round_counter, self.hakem_id, s1, self.team_1_score, s2, self.team_2_score, colors.ENDC))
             self.round_counter += 1
         self.finish_game()
 

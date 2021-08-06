@@ -1,5 +1,4 @@
 import gym
-from stable_baselines3.common.vec_env.wrappers import VecActionMasker
 from stable_baselines3.ppo import MlpPolicy
 
 # env = gym.make('src:shelem-v0')

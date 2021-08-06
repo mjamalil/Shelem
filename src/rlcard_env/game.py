@@ -6,10 +6,11 @@ from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
 from dealer.Utils import ThreeConsecutivePassesException, InvalidActionError, get_round_payoff
-from players.Enum import NUMBER_OF_PARAMS, ACTION_SIZE, NUM_PLAYERS, GAMESTATE, SUITS, GAMEMODE, colors, MAX_SCORE
+from players.Enum import ACTION_SIZE, NUM_PLAYERS, GAMESTATE, SUITS, GAMEMODE, colors, MAX_SCORE
 from players.IntelligentPlayer import IntelligentPlayer, AgentPlayer
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
+from rlcard_env.game_state import NUMBER_OF_PARAMS
 
 
 class ShelemGame:
@@ -148,7 +149,7 @@ class ShelemGame:
             return self.step(action)
         elif self.game_state == GAMESTATE.PLAYING_CARDS:
             if action is None:
-                return self.players[self.current_player].game_state, self.current_player
+                return self.players[self.current_player].observation.state, self.current_player
             if len(self.round_hands_played) < 12:
                 state, current_player = self.play_card(action)
             else:
@@ -211,7 +212,6 @@ class ShelemGame:
 
     def play_card(self, action):
         if self.players[self.current_player].agent:
-            self.observation = self.players[self.current_player].game_state
             if self.verbose >= 2:
                 self.players[self.current_player].log_game_state()
 
@@ -246,7 +246,7 @@ class ShelemGame:
             self.current_player = self.hand_winner
         else:
             self.current_player = (self.current_player + 1) % NUM_PLAYERS
-        return self.players[self.current_player].game_state, self.current_player
+        return self.players[self.current_player].observation.state, self.current_player
 
     def end_trick(self):
         if self.verbose >= 2:
@@ -302,7 +302,7 @@ class ShelemGame:
             (dict): The state of the player
         """
         # self.players[player_id].log_game_state()
-        return self.players[player_id].game_state
+        return self.players[player_id].observation.state
 
     def get_payoffs(self):
         """ Return the payoffs of the game

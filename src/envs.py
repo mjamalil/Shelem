@@ -1,5 +1,4 @@
 import gym
-import numpy as np
 from gym import spaces
 from collections import deque
 from typing import List
@@ -8,9 +7,10 @@ from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
 from dealer.Utils import ThreeConsecutivePassesException, InvalidActionError
-from players.Enum import NUMBER_OF_PARAMS, ACTION_SIZE, NUM_PLAYERS, GAMESTATE, SUITS, GAMEMODE, MAX_SCORE
+from players.Enum import ACTION_SIZE, NUM_PLAYERS, GAMESTATE, SUITS, GAMEMODE, MAX_SCORE
 from players.IntelligentPlayer import IntelligentPlayer, AgentPlayer
 from players.Player import Player
+from rlcard_env.game_state import NUMBER_OF_PARAMS
 
 
 class ShelemEnv(gym.Env):

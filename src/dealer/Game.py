@@ -18,8 +18,8 @@ class Game:
     def __init__(self, players: List[Player]):
         self.game_end = 1165
         self.random_play = 0
-        self.limit_game_number = 1000
-        self.benchmark_rounds = 0
+        self.limit_game_number = 10000
+        self.benchmark_rounds = 8000
         self.french_deck = Deck()
         self.players = players
         self.player_id_receiving_first_hand = 0
@@ -172,5 +172,6 @@ class Game:
 
 
 if __name__ == '__main__':
-    players = [PPOPlayer(0, 2), RuleBasedPlayer(1, 3), RuleBasedPlayer(2, 0), RuleBasedPlayer(3, 1)]
-    Game(players).begin_game()
+    players1 = [PPOPlayer(0, 2), IntelligentPlayer(1, 3), IntelligentPlayer(2, 0), IntelligentPlayer(3, 1)]
+    players2 = [PPOPlayer(0, 2), RuleBasedPlayer(1, 3), RuleBasedPlayer(2, 0), RuleBasedPlayer(3, 1)]
+    Game(players1).begin_game()

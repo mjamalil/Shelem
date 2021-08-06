@@ -56,12 +56,9 @@ class ShelemGame:
         self.rewards = [0] * NUM_PLAYERS
         self.action_performed = False
         self.num_envs = 1
-        self.set_players([
-            AgentPlayer(0, 2),
-            RuleBasedPlayer(1, 3),
-            RuleBasedPlayer(2, 0),
-            RuleBasedPlayer(3, 1),
-        ])
+        p1 = [AgentPlayer(0, 2), IntelligentPlayer(1, 3), IntelligentPlayer(2, 0), IntelligentPlayer(3, 1)]
+        p2 = [AgentPlayer(0, 2), RuleBasedPlayer(1, 3), RuleBasedPlayer(2, 0), RuleBasedPlayer(3, 1)]
+        self.set_players(p1)
 
     def reset(self):
         print()
@@ -169,6 +166,7 @@ class ShelemGame:
         del self.round_bets[:]
         d1, d2, d3, self.round_middle_deck, d4 = self.french_deck.deal()
         decks = deque([d1, d2, d3, d4])
+
         # rotate players
         for _ in range(self.player_id_receiving_first_hand):
             decks.append(decks.popleft())
@@ -268,7 +266,7 @@ class ShelemGame:
         self.team_1_round_score = (self.players[0].saved_deck + self.players[2].saved_deck).get_deck_score()
         self.team_2_round_score = (self.players[1].saved_deck + self.players[3].saved_deck).get_deck_score()
         final_bet = self.round_bets[-1]
-        s1, s2, self.rewards[0] = get_round_payoff(
+        s1, s2, r = get_round_payoff(
             self.hakem.player_id, final_bet.bet, self.team_1_round_score, self.team_2_round_score)
         self.rewards[0] = sorted((-1, (s1 - s2) / (2 * MAX_SCORE), 1))[1]
         # self.rewards[2] = self.rewards[0]

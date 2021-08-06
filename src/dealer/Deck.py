@@ -75,15 +75,23 @@ class Deck:
                 score += 0#5
         return score
 
+    def count_eligible_cards(self, suit: SUITS):
+        count_card = 0
+        for c in self._cards:
+            if c.suit == suit:
+                count_card += 1
+        return count_card or len(self._cards)
+
     def pop_random_from_suit(self, suit: SUITS):
-        # TODO optimize it with memoization
-        if suit is SUITS.NOSUIT:
-            return self._cards.pop(0)
-        pop_index = 0
+        pop_index = random.randint(0, self.count_eligible_cards(suit)-1)
+        suit_ind = 0
         for ind, card in enumerate(self._cards):
             if card.suit == suit:
-                pop_index = ind
-                break
+                if suit_ind == pop_index:
+                    pop_index = ind
+                    break
+                else:
+                    suit_ind += 1
         return self._cards.pop(pop_index)
 
     def get_by_value(self, value):

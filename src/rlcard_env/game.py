@@ -22,7 +22,6 @@ class ShelemGame:
         self.french_deck = Deck()
         self.players = None
         self.player_id_receiving_first_hand = 0
-        self.logging = Logging()
         self.team_1_score = 0.0
         self.team_2_score = 0.0
         self.team_1_round_score = 0.0
@@ -140,7 +139,6 @@ class ShelemGame:
             self.decide_trump(action)
             self.game_state = GAMESTATE.PLAYING_CARDS
             if len(self.hakem.saved_deck) == NUM_PLAYERS:
-                self.logging.log_hakem_saved_hand(Deck(self.hakem.saved_deck))
                 self.hand_winner = self.hakem.player_id
                 self.hand_first_player = self.hakem.player_id
                 self.current_player = self.hakem.player_id
@@ -170,7 +168,6 @@ class ShelemGame:
     def start_round(self):
         del self.round_bets[:]
         d1, d2, d3, self.round_middle_deck, d4 = self.french_deck.deal()
-        self.logging.log_middle_deck(self.round_middle_deck)
         decks = deque([d1, d2, d3, d4])
         # rotate players
         for _ in range(self.player_id_receiving_first_hand):
@@ -195,14 +192,12 @@ class ShelemGame:
 
     def decide_game_mode(self, action):
         self.hakem = self.betting_players.popleft()
-        self.logging.log_bet(self.round_bets[-1])
         if not self.hakem.game_has_begun:
             raise ValueError("Game has not started yet")
         self.game_mode = self.hakem.decide_game_mode(self.round_middle_deck)
 
     def decide_trump(self, action):
         self.current_suit = self.hokm_suit = self.hakem.decide_trump()
-        self.logging.log_hokm(self.game_mode, self.hokm_suit)
         for i in range(NUM_PLAYERS):
             self.players[i].set_hokm_and_game_mode(self.game_mode, self.hokm_suit, self.hakem.player_id)
 
@@ -260,7 +255,6 @@ class ShelemGame:
             separator = "*" * 40
             print("{}{}{}".format(colors.BLUE, separator, colors.ENDC))
         self.round_hands_played.append(self.round_current_hand)
-        self.logging.add_hand(self.hand_first_player, self.round_current_hand)
         for p in self.players:
             p.end_trick(self.round_current_hand, self.hand_winner)
 

@@ -20,8 +20,8 @@ register(
 
 def train():
     seed = 4
-    num_episodes = 1000
-    evaluate_every = 1000
+    num_episodes = 2000
+    evaluate_every = 100
     num_eval_games = 100
     algorithm = 'dqn'
     log_dir = '../../experiments/shelem_result/'

@@ -10,7 +10,7 @@ from players.Player import Player, Bet
 from players.Enum import *
 from rlcard_env.game_state import GameState, NUMBER_OF_PARAMS, STATE
 
-
+CUT_OFF = 36
 class BaseIntelligentPlayer(Player):
     hokm_suit = SUITS.NOSUIT
 
@@ -34,7 +34,7 @@ class BaseIntelligentPlayer(Player):
         # game_state = my cards + ground cards + played tricks + game status
         self.observation.reset_state()
         for i in range(len(deck.cards)):
-            self.observation.set_state(STATE.MY_CARDS, deck.cards[i].id, 1)
+            self.observation.set_state(STATE.MY_HAND, deck.cards[i].id, 1)
 
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
         """
@@ -49,13 +49,14 @@ class BaseIntelligentPlayer(Player):
         trump = super().decide_trump()
         # set new deck
         for i in range(DECK_SIZE):
-            self.observation.set_state(STATE.MY_CARDS, i, 0)
+            self.observation.set_state(STATE.MY_HAND, i, 0)
         for i in range(len(self.deck.cards)):
-            self.observation.set_state(STATE.MY_CARDS, self.deck.cards[i].id, 1)
+            self.observation.set_state(STATE.MY_HAND, self.deck.cards[i].id, 1)
         # set widow cards
         widow_size = 4
         for i in range(widow_size):
-            self.observation.set_state(STATE.PLAYED_CARDS, self.saved_deck[i].id, 1)
+            if self.saved_deck[i].id >= CUT_OFF:
+                self.observation.set_state(STATE.PLAYED_CARDS, self.saved_deck[i].id, 1)
         return trump
 
     def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS, hakem: int):
@@ -90,9 +91,10 @@ class BaseIntelligentPlayer(Player):
         super().end_trick(hand, winner_id)
         for c in hand:
             # remove card from my cards if I have it
-            self.observation.set_state(STATE.MY_CARDS, c.id, 0)
+            self.observation.set_state(STATE.MY_HAND, c.id, 0)
             # add card to played cards
-            self.observation.set_state(STATE.PLAYED_CARDS, c.id, 1)
+            if c.id >= CUT_OFF:
+                self.observation.set_state(STATE.PLAYED_CARDS, c.id, 1)
         max_crr_trick_num = 3
         for i in range(max_crr_trick_num*DECK_SIZE):
             self.observation.set_state(STATE.CRR_TRICK, i, 0)

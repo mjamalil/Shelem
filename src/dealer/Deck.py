@@ -83,6 +83,7 @@ class Deck:
         return count_card or len(self._cards)
 
     def pop_random_from_suit(self, suit: SUITS):
+        # random.randint(0,12)
         pop_index = random.randint(0, self.count_eligible_cards(suit)-1)
         suit_ind = 0
         for ind, card in enumerate(self._cards):

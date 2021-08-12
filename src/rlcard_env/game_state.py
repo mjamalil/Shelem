@@ -5,7 +5,7 @@ from players.Enum import DECK_SIZE, NUM_SUITS, NUM_PLAYERS
 NOT_SET = 0
 
 class STATE(IntEnum):
-    MY_CARDS = auto()
+    MY_HAND = auto()
     LEADER = auto()
     CRR_TRUMP = auto()
     CRR_SUIT = auto()
@@ -14,7 +14,7 @@ class STATE(IntEnum):
 
 
 Dimension = {
-    STATE.MY_CARDS: DECK_SIZE,
+    STATE.MY_HAND: DECK_SIZE,
     STATE.CRR_TRICK: 3*DECK_SIZE,
     STATE.PLAYED_CARDS: DECK_SIZE,
     STATE.CRR_TRUMP: NUM_SUITS,
@@ -22,10 +22,10 @@ Dimension = {
     STATE.LEADER: NUM_PLAYERS,
 }
 Active = {
-    STATE.MY_CARDS: True,
-    STATE.CRR_TRICK: False,
+    STATE.MY_HAND: True,
+    STATE.CRR_TRICK: True,
     STATE.PLAYED_CARDS: True,
-    STATE.CRR_TRUMP: True,
+    STATE.CRR_TRUMP: False,
     STATE.CRR_SUIT : True,
     STATE.LEADER: True,
 }

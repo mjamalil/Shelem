@@ -1,5 +1,7 @@
 from enum import IntEnum, auto
 
+from dealer.Deck import Deck
+from dealer.Logging import Logging
 from players.Enum import DECK_SIZE, NUM_SUITS, NUM_PLAYERS
 
 NOT_SET = 0
@@ -41,6 +43,7 @@ print(f"number of parameters: {NUMBER_OF_PARAMS}")
 class GameState:
 
     def __init__(self):
+        self.played_card_cutoff = 36
         self.reset_state()
         self._state_index = {}
         cumulative_index = 0
@@ -59,7 +62,35 @@ class GameState:
     def set_state(self, sub_state: STATE, index: int, value: float):
         if not Active[sub_state]:
             return
+
         if index >= Dimension[sub_state]:
             raise RuntimeError("invalid sub-state index:{}->{}".format(sub_state, index))
+        if sub_state == STATE.PLAYED_CARDS and index < self.played_card_cutoff:
+            return
         self._state[self._state_index[sub_state] + index] = value
+
+    def log(self):
+        DummyDeck = Deck()
+        DummyDeck.deal()
+        for d in Dimension:
+            if Active[d]:
+                idx1 = self._state_index[d]
+                idx2 = idx1 + Dimension[d]
+                if d in [STATE.MY_HAND, STATE.PLAYED_CARDS]:
+                    my_hand = []
+                    for i in range(idx1, idx2):
+                        if self._state[i] == 1:
+                            my_hand.append(DummyDeck.get_by_value(i-idx1))
+                    Logging.debug("{} -> {}".format(d.name, my_hand))
+                elif d == STATE.CRR_TRICK:
+                    current_trick = []
+                    for i in range(idx1, idx2):
+                        card_idx = (i - idx1) % DECK_SIZE
+                        if self._state[i] == 1:
+                            current_trick.append(DummyDeck.get_by_value(card_idx))
+                    Logging.debug("{} -> {}".format(d.name, current_trick))
+                else:
+                    Logging.debug("{} -> {}".format(d.name, self._state[idx1:idx2]))
+
+
 

@@ -212,9 +212,7 @@ class ShelemGame:
 
     def play_card(self, action):
         if self.players[self.current_player].agent:
-            if self.verbose >= 2:
-                self.players[self.current_player].log_game_state()
-
+            Logging.debug("{}{}{}".format(colors.PURPLE, self.players[self.current_player].deck, colors.ENDC))
             try:
                 played_card = self.players[self.current_player].pop_card_from_deck(action, self.current_suit)
             except InvalidActionError:
@@ -223,15 +221,17 @@ class ShelemGame:
         else:
             played_card = self.players[self.current_player].play_a_card(self.round_current_hand, self.current_suit)
 
-        if played_card.suit == self.hokm_suit:
-            color = colors.RED
-        else:
-            color = colors.GREEN
-        if self.verbose >= 2:
-            print("{}{}-{}{}".format(color, self.current_player, played_card, colors.ENDC))
         self.round_current_hand.append(played_card)
         if self.current_suit == SUITS.NOSUIT:
             self.current_suit = played_card.suit
+        if played_card.suit == self.hokm_suit:
+            color = colors.RED
+        elif played_card.suit == self.current_suit:
+            color = colors.GREEN
+        else:
+            color = colors.BROWN
+        if self.verbose >= 2:
+            print("{}{}-{}{}".format(color, self.current_player, played_card, colors.ENDC))
         for p in self.players:
             p.card_has_been_played(self.round_current_hand, self.current_suit)
 
@@ -251,7 +251,7 @@ class ShelemGame:
     def end_trick(self):
         if self.verbose >= 2:
             separator = "*" * 40
-            print("{}{}{}".format(colors.BLUE, separator, colors.ENDC))
+            print(separator)
         self.round_hands_played.append(self.round_current_hand)
         for p in self.players:
             p.end_trick(self.round_current_hand, self.hand_winner)
@@ -277,7 +277,7 @@ class ShelemGame:
         self.team_1_score += s1
         self.team_2_score += s2
         print("{}Round {}: Team 1 score = {} ({}) and Team 2 score = {} ({}){}".format(
-            colors.BROWN, self.round_counter, s1, self.team_1_score, s2, self.team_2_score, colors.ENDC))
+            colors.BLUE, self.round_counter, s1, self.team_1_score, s2, self.team_2_score, colors.ENDC))
         self.round_counter += 1
         if self.check_game_finished():
             print("{}Final Scores = Team 1 score = {} and Team 2 score = {}{}".format(
@@ -301,7 +301,6 @@ class ShelemGame:
         Returns:
             (dict): The state of the player
         """
-        # self.players[player_id].log_game_state()
         return self.players[player_id].observation.state
 
     def get_payoffs(self):

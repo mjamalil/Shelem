@@ -10,7 +10,7 @@ from players.Player import Player, Bet
 from players.Enum import *
 from rlcard_env.game_state import GameState, NUMBER_OF_PARAMS, STATE
 
-CUT_OFF = 36
+
 class BaseIntelligentPlayer(Player):
     hokm_suit = SUITS.NOSUIT
 
@@ -55,8 +55,7 @@ class BaseIntelligentPlayer(Player):
         # set widow cards
         widow_size = 4
         for i in range(widow_size):
-            if self.saved_deck[i].id >= CUT_OFF:
-                self.observation.set_state(STATE.PLAYED_CARDS, self.saved_deck[i].id, 1)
+            self.observation.set_state(STATE.PLAYED_CARDS, self.saved_deck[i].id, 1)
         return trump
 
     def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS, hakem: int):
@@ -93,8 +92,7 @@ class BaseIntelligentPlayer(Player):
             # remove card from my cards if I have it
             self.observation.set_state(STATE.MY_HAND, c.id, 0)
             # add card to played cards
-            if c.id >= CUT_OFF:
-                self.observation.set_state(STATE.PLAYED_CARDS, c.id, 1)
+            self.observation.set_state(STATE.PLAYED_CARDS, c.id, 1)
         max_crr_trick_num = 3
         for i in range(max_crr_trick_num*DECK_SIZE):
             self.observation.set_state(STATE.CRR_TRICK, i, 0)
@@ -119,25 +117,27 @@ class BaseIntelligentPlayer(Player):
 
     def get_legal_actions(self, current_suit):
         valid_actions = []
-        valid_action_found = False
         for c in self.deck.cards:
             if self.deck.has_suit(current_suit):
                 if c.suit == current_suit:
                     valid_actions.append(c.id)
-                    valid_action_found = True
             else:
                 valid_actions.append(c.id)
-                valid_action_found = True
+        return valid_actions
 
-        # if not valid_action_found:
-        #     raise RuntimeError("No Valid action found")
+    def get_legal_actions2(self, current_suit):
+        valid_actions = []
+        for idx, c in enumerate(self.deck.cards):
+            if self.deck.has_suit(current_suit):
+                if c.suit == current_suit:
+                    valid_actions.append(idx)
+            else:
+                valid_actions.append(idx)
         return valid_actions
 
     def build_model(self):
         pass
 
-    def log_game_state(self):
-        pass
 
 class IntelligentPlayer(BaseIntelligentPlayer):
     pass

@@ -1,7 +1,5 @@
 from enum import Enum, auto, IntEnum
 
-
-
 ACTION_DIM = 52
 
 DECK_SIZE = 52

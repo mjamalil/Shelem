@@ -101,6 +101,16 @@ class Player:
             raise InvalidActionError
         return self.deck.pop_card_from_deck(selected_card)
 
+    def pop_card_from_deck2(self, card: int, current_suit: SUITS):
+        try:
+            selected_card = self.deck.get_by_index(card)
+            if self.deck.has_suit(current_suit):
+                if selected_card.suit != current_suit:
+                    raise InvalidActionError
+        except IndexError:
+            raise InvalidActionError
+        return self.deck.pop_card_from_deck(selected_card)
+
     def decide_game_mode(self, middle_hand: Deck):
         self.deck += middle_hand
         return GAMEMODE.SARAS
@@ -131,8 +141,6 @@ class Player:
         :return: pops and plays the best available card in the current hand
         request action
         """
-        # TODO: NotImplemented
-
         return self.deck.pop_random_from_suit(current_suit)
 
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:

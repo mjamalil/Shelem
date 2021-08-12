@@ -95,6 +95,12 @@ class Deck:
                     suit_ind += 1
         return self._cards.pop(pop_index)
 
+    def pop_by_index(self, pop_index: int):
+        return self._cards.pop(pop_index)
+
+    def get_by_index(self, pop_index: int):
+        return self._cards[pop_index]
+
     def get_by_value(self, value):
         for card in self._cards:
             if card.id == value:

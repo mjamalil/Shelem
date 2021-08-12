@@ -201,8 +201,6 @@ class ShelemEnv(gym.Env):
             if self.action_performed:
                 self.action_performed = False
                 self.observation = self.players[self.current_player].game_state
-                self.players[self.current_player].log_game_state()
-                # self.reward = 1
                 return True
             try:
                 played_card = self.players[self.current_player].pop_card_from_deck(action, self.current_suit)

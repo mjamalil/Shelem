@@ -41,7 +41,6 @@ class ShelemGame:
         self.hokm_suit = SUITS.NOSUIT
 
         self.round_hands_played = []
-        self.round_current_hand = []
         self.hand_winner = 0
 
         self.hand_first_player = 0
@@ -59,7 +58,7 @@ class ShelemGame:
         self.num_envs = 1
         p1 = [AgentPlayer(0, 2), IntelligentPlayer(1, 3), IntelligentPlayer(2, 0), IntelligentPlayer(3, 1)]
         p2 = [AgentPlayer(0, 2), RuleBasedPlayer(1, 3), RuleBasedPlayer(2, 0), RuleBasedPlayer(3, 1)]
-        self.set_players(p1)
+        self.set_players(p2)
 
     def reset(self):
         print()
@@ -79,7 +78,7 @@ class ShelemGame:
         self.hakem = None
         self.round_middle_deck = None
         del self.round_hands_played[:]
-        del self.round_current_hand[:]
+        self.round_current_hand = [None] * 4
         self.hand_winner = 0
         self.game_mode = GAMEMODE.NORMAL
         self.hokm_suit = SUITS.NOSUIT
@@ -140,7 +139,7 @@ class ShelemGame:
                 self.hand_winner = self.hakem.player_id
                 self.hand_first_player = self.hakem.player_id
                 self.current_player = self.hakem.player_id
-                self.round_current_hand = []
+                self.round_current_hand = [None] * 4
                 self.hand_winner_card = None
                 self.game_state = GAMESTATE.PLAYING_CARDS
             return self.step(action)
@@ -213,6 +212,7 @@ class ShelemGame:
     def play_card(self, action):
         if self.players[self.current_player].agent:
             Logging.debug("{}{}{}".format(colors.PURPLE, self.players[self.current_player].deck, colors.ENDC))
+            self.players[self.current_player].observation.log()
             try:
                 played_card = self.players[self.current_player].pop_card_from_deck(action, self.current_suit)
             except InvalidActionError:
@@ -221,7 +221,7 @@ class ShelemGame:
         else:
             played_card = self.players[self.current_player].play_a_card(self.round_current_hand, self.current_suit)
 
-        self.round_current_hand.append(played_card)
+        self.round_current_hand[self.current_player] = played_card
         if self.current_suit == SUITS.NOSUIT:
             self.current_suit = played_card.suit
         if played_card.suit == self.hokm_suit:
@@ -241,11 +241,12 @@ class ShelemGame:
             self.hand_winner = self.current_player
 
         # goto next player`
-        if len(self.round_current_hand) == NUM_PLAYERS:
+        if None in self.round_current_hand:
+            self.current_player = (self.current_player + 1) % NUM_PLAYERS
+        else:
             self.end_trick()
             self.current_player = self.hand_winner
-        else:
-            self.current_player = (self.current_player + 1) % NUM_PLAYERS
+
         return self.players[self.current_player].observation.state, self.current_player
 
     def end_trick(self):
@@ -257,7 +258,7 @@ class ShelemGame:
             p.end_trick(self.round_current_hand, self.hand_winner)
 
         self.hand_first_player = self.hand_winner
-        self.round_current_hand = []
+        self.round_current_hand = [None] * 4
         self.current_suit = SUITS.NOSUIT
         self.hand_winner_card = None
 

@@ -41,7 +41,7 @@ class RuleBasedPlayer(IntelligentPlayer):
         return tuple(saving_hand), self.game_mode, hokm_suit
 
     def play_a_card(self,  current_hand: List, current_suit: SUITS) -> Card:
-        turn = len(current_hand)
+        turn = NUM_PLAYERS - current_hand.count(None)
         # print("*"*40)
         # print(self.deck)
         if turn == 0:
@@ -82,8 +82,8 @@ class RuleBasedPlayer(IntelligentPlayer):
         return self.play_lowest_card(current_suit)
 
     def play_turn2(self, current_hand, current_suit):
-        teammate_card = current_hand[-2]
-        opponent_card = current_hand[-1]
+        teammate_card = current_hand[self.team_mate_player_id]
+        opponent_card = current_hand[(self.player_id - 1 + NUM_PLAYERS) % NUM_PLAYERS]
         if self.deck.has_suit(current_suit):
             for c in reversed(self.deck.cards):
                 same_suit_enforce = c.suit == current_suit
@@ -109,7 +109,7 @@ class RuleBasedPlayer(IntelligentPlayer):
 
     def play_turn3(self, current_hand, current_suit):
         best_card = self.best_card_in_trick(current_hand, current_suit)
-        teammate_card = current_hand[-2]
+        teammate_card = current_hand[self.team_mate_player_id]
         if teammate_card == best_card:
             return self.play_lowest_card(current_suit)
         for c in self.deck.cards:
@@ -123,11 +123,13 @@ class RuleBasedPlayer(IntelligentPlayer):
         return self.play_lowest_card(current_suit)
 
     def best_card_in_trick(self, current_hand: List, current_suit: SUITS):
-        if len(current_hand) == 0:
+        if NUM_PLAYERS == current_hand.count(None):
             raise RuntimeError("nobody has played")
         best_card = current_hand[0]
         for c in current_hand:
-            if Card.compare(c, best_card, self.game_mode, self.hokm_suit, current_suit) > 0:
+            if c is None:
+                continue
+            if best_card is None or Card.compare(c, best_card, self.game_mode, self.hokm_suit, current_suit) > 0:
                 best_card = c
         return best_card
 

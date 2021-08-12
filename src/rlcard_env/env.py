@@ -11,7 +11,7 @@ class ShelemRlEnv(Env):
 
     def __init__(self, config):
         self.name = 'shelem-rlcard'
-        self.game = ShelemGame(game_end=0, verbose=2)
+        self.game = ShelemGame(game_end=0, verbose=1)
         super().__init__(config)
         self.state_shape = [[self.state_shape_x, NUMBER_OF_PARAMS] for _ in range(self.num_players)]
         self.action_shape = [None for _ in range(self.num_players)]

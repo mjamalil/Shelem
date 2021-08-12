@@ -71,12 +71,13 @@ class BaseIntelligentPlayer(Player):
         return self.deck.pop_random_from_suit(current_suit)
 
     def card_has_been_played(self, current_hand: List, current_suit: SUITS):
-        max_crr_trick_num = 3
         for i in range(SUITS.SPADES):
             self.observation.set_state(STATE.CRR_SUIT, i, int(current_suit == SUITS(i+1)))
-        for i in range(max_crr_trick_num):
-            if i < len(current_hand):
-                self.observation.set_state(STATE.CRR_TRICK, i*DECK_SIZE + current_hand[i].id, 1)
+        for i in range(NUM_PLAYERS):
+            if i == self.player_id or current_hand[i] is None:
+                continue
+            player_idx_in_trick = (i - self.player_id - 1 + NUM_PLAYERS) % NUM_PLAYERS
+            self.observation.set_state(STATE.CRR_TRICK, player_idx_in_trick*DECK_SIZE + current_hand[i].id, 1)
 
     def discard_cards_from_leader(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """

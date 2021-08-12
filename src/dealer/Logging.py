@@ -7,7 +7,7 @@ from players.Player import Bet
 
 
 class Logging:
-    verbose = 4
+    verbose = 2
 
     def __init__(self, verbose):
         self.hands = []

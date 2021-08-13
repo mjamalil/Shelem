@@ -6,7 +6,7 @@ from dealer.Card import Card
 from dealer.Deck import Deck
 from dealer.Logging import Logging
 from dealer.Utils import ThreeConsecutivePassesException, InvalidActionError, get_round_payoff
-from players.Enum import ACTION_SIZE, NUM_PLAYERS, GAMESTATE, SUITS, GAMEMODE, colors, MAX_SCORE
+from players.Enum import ACTION_SIZE, NUM_PLAYERS, GAMESTATE, SUITS, GAMEMODE, colors, MAX_SCORE, DECK_SIZE
 from players.IntelligentPlayer import IntelligentPlayer, AgentPlayer
 from players.Player import Player
 from players.RuleBasedPlayer import RuleBasedPlayer
@@ -328,7 +328,7 @@ class ShelemGame:
         Returns:
             (int): The number of actions. There are 61 actions
         """
-        return 52
+        return DECK_SIZE
 
     def get_player_id(self):
         """ Return the current player's id

@@ -8,7 +8,7 @@ from dealer.Logging import Logging
 from dealer.Utils import get_round_payoff
 from players.Player import Player, Bet
 from players.Enum import *
-from rlcard_env.game_state import GameState, NUMBER_OF_PARAMS, STATE
+from rlcard_env.game_state import GameState, NUMBER_OF_PARAMS, STATE, GameState2, CARD_STATE
 
 
 class BaseIntelligentPlayer(Player):
@@ -17,7 +17,8 @@ class BaseIntelligentPlayer(Player):
     def __init__(self, player_id, team_mate_player_id):
         super().__init__(player_id, team_mate_player_id)
         self.build_model()
-        self.observation = GameState()
+        self.observation1 = GameState()
+        self.observation = GameState2()
         self.PLAYED_CARD_OFFSET = 16
         self.agent = False
 
@@ -32,9 +33,11 @@ class BaseIntelligentPlayer(Player):
         super().begin_round(deck)
         # a series of values storing all data of a round
         # game_state = my cards + ground cards + played tricks + game status
+        self.observation1.reset_state()
         self.observation.reset_state()
         for i in range(len(deck.cards)):
-            self.observation.set_state(STATE.MY_HAND, deck.cards[i].id, 1)
+            self.observation1.set_state(STATE.MY_HAND, deck.cards[i].id, 1)
+            self.observation.set_state(deck.cards[i].id, CARD_STATE.MY_HAND)
 
     def make_bet(self, previous_last_bets: List[Bet]) -> Bet:
         """
@@ -49,13 +52,15 @@ class BaseIntelligentPlayer(Player):
         trump = super().decide_trump()
         # set new deck
         for i in range(DECK_SIZE):
-            self.observation.set_state(STATE.MY_HAND, i, 0)
+            self.observation1.set_state(STATE.MY_HAND, i, 0)
         for i in range(len(self.deck.cards)):
-            self.observation.set_state(STATE.MY_HAND, self.deck.cards[i].id, 1)
+            self.observation1.set_state(STATE.MY_HAND, self.deck.cards[i].id, 1)
+            self.observation.set_state(self.deck.cards[i].id, CARD_STATE.MY_HAND)
         # set widow cards
         widow_size = 4
         for i in range(widow_size):
-            self.observation.set_state(STATE.PLAYED_CARDS, self.saved_deck[i].id, 1)
+            self.observation1.set_state(STATE.PLAYED_CARDS, self.saved_deck[i].id, 1)
+            self.observation.set_state(self.saved_deck[i].id, CARD_STATE.PLAYED)
         return trump
 
     def set_hokm_and_game_mode(self, game_mode: GAMEMODE, hokm_suit: SUITS, hakem: int):
@@ -63,21 +68,22 @@ class BaseIntelligentPlayer(Player):
         self.game_mode = game_mode
         self.hokm_suit = hokm_suit
         for i in range(SUITS.SPADES):
-            self.observation.set_state(STATE.CRR_TRUMP, i, int(hokm_suit == SUITS(i+1)))
+            self.observation1.set_state(STATE.CRR_TRUMP, i, int(hokm_suit == SUITS(i+1)))
         for i in range(NUM_PLAYERS):
-            self.observation.set_state(STATE.LEADER, i, int(i == hakem))
+            self.observation1.set_state(STATE.LEADER, i, int(i == hakem))
 
     def play_a_card(self, current_hand: List, current_suit: SUITS) -> Card:
         return self.deck.pop_random_from_suit(current_suit)
 
     def card_has_been_played(self, current_hand: List, current_suit: SUITS):
         for i in range(SUITS.SPADES):
-            self.observation.set_state(STATE.CRR_SUIT, i, int(current_suit == SUITS(i+1)))
+            self.observation1.set_state(STATE.CRR_SUIT, i, int(current_suit == SUITS(i+1)))
         for i in range(NUM_PLAYERS):
             if i == self.player_id or current_hand[i] is None:
                 continue
             player_idx_in_trick = (i - self.player_id - 1 + NUM_PLAYERS) % NUM_PLAYERS
-            self.observation.set_state(STATE.CRR_TRICK, player_idx_in_trick*DECK_SIZE + current_hand[i].id, 1)
+            self.observation1.set_state(STATE.CRR_TRICK, player_idx_in_trick*DECK_SIZE + current_hand[i].id, 1)
+            self.observation.set_state(current_hand[i].id, CARD_STATE(player_idx_in_trick+1))
 
     def discard_cards_from_leader(self) -> Tuple[Tuple[int, int, int, int], GAMEMODE, SUITS]:
         """
@@ -91,14 +97,15 @@ class BaseIntelligentPlayer(Player):
         super().end_trick(hand, winner_id)
         for c in hand:
             # remove card from my cards if I have it
-            self.observation.set_state(STATE.MY_HAND, c.id, 0)
+            self.observation1.set_state(STATE.MY_HAND, c.id, 0)
             # add card to played cards
-            self.observation.set_state(STATE.PLAYED_CARDS, c.id, 1)
+            self.observation1.set_state(STATE.PLAYED_CARDS, c.id, 1)
+            self.observation.set_state(c.id, CARD_STATE.PLAYED)
         max_crr_trick_num = 3
         for i in range(max_crr_trick_num*DECK_SIZE):
-            self.observation.set_state(STATE.CRR_TRICK, i, 0)
+            self.observation1.set_state(STATE.CRR_TRICK, i, 0)
         for i in range(SUITS.SPADES):
-            self.observation.set_state(STATE.CRR_SUIT, i, 0)
+            self.observation1.set_state(STATE.CRR_SUIT, i, 0)
 
     def get_valid_actions(self, current_suit):
         valid_actions = DECK_SIZE * [False]
@@ -179,7 +186,7 @@ class PPOPlayer(BaseIntelligentPlayer):
         while invalid_card:
             try:
                 valid_actions = self.get_valid_actions(current_suit)
-                action = self.request_action(self.observation, valid_actions)
+                action = self.request_action(self.observation1, valid_actions)
                 selected_card = self.deck.get_by_value(action)
             except ValueError as err:
                 # print(err)

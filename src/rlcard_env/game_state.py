@@ -4,7 +4,7 @@ from dealer.Deck import Deck
 from dealer.Logging import Logging
 from players.Enum import DECK_SIZE, NUM_SUITS, NUM_PLAYERS
 
-NOT_SET = 0
+NOT_SET = 0.0
 
 class STATE(IntEnum):
     MY_HAND = auto()
@@ -32,12 +32,10 @@ Active = {
     STATE.LEADER: True,
 }
 
-NUMBER_OF_PARAMS = 0
+GAMESTATE1_PARAMS = 0
 for d in Dimension:
     if Active[d]:
-        NUMBER_OF_PARAMS += Dimension[d]
-
-print(f"number of parameters: {NUMBER_OF_PARAMS}")
+        GAMESTATE1_PARAMS += Dimension[d]
 
 
 class GameState:
@@ -57,7 +55,7 @@ class GameState:
         return self._state
 
     def reset_state(self):
-        self._state = [NOT_SET] * NUMBER_OF_PARAMS
+        self._state = [NOT_SET] * GAMESTATE1_PARAMS
 
     def set_state(self, sub_state: STATE, index: int, value: float):
         if not Active[sub_state]:
@@ -92,5 +90,32 @@ class GameState:
                 else:
                     Logging.debug("{} -> {}".format(d.name, self._state[idx1:idx2]))
 
+class CARD_STATE(IntEnum):
+    PLAYER0 = auto()
+    PLAYER1 = auto()
+    PLAYER2 = auto()
+    MY_HAND = auto()
+    PLAYED = auto()
 
 
+GAMESTATE2_PARAMS = DECK_SIZE
+class GameState2:
+
+    def __init__(self):
+        self.reset_state()
+
+    @property
+    def state(self):
+        return self._state
+
+    def reset_state(self):
+        self._state = [NOT_SET] * GAMESTATE2_PARAMS
+
+    def set_state(self, card: int, new_state: CARD_STATE):
+        self._state[card] = new_state/CARD_STATE.PLAYED
+
+    def log(self):
+        pass
+
+NUMBER_OF_PARAMS = GAMESTATE2_PARAMS
+print(f"number of parameters: {NUMBER_OF_PARAMS}")
